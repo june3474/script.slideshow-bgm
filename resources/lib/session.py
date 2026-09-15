@@ -168,8 +168,8 @@ class SlideshowSession:
             self._disable(Reason.NOT_SELECTED.value, notify=False)
             return
         messages.log(
-            "session start: source={0}:{1} shuffle={2}".format(
-                source.kind.value, source.path, source.shuffle
+            "session start: version={0} source={1}:{2} shuffle={3}".format(
+                lib.addon_version, source.kind.value, source.path, source.shuffle
             )
         )
         result = config.validate(source)

@@ -479,7 +479,7 @@ def test_shuffle_being_ignored_is_recorded_in_the_session_start_log(
     _run_slideshow(monkeypatch)
 
     assert _one_log("session start:") == (
-        "session start: source=PLAYLIST:{0} shuffle=False".format(path)
+        "session start: version=0.1.0 source=PLAYLIST:{0} shuffle=False".format(path)
     )
 
 
