@@ -117,7 +117,7 @@ dmypy.json
 .specify/
 
 # CODEX
-#AGENTS.md
+AGENTS.md
 
 # Local databases
 *.db
