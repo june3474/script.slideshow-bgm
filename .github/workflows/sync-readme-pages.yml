@@ -1,0 +1,60 @@
+name: Sync README to GitHub Pages
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - README.md
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sync-readme-to-gh-pages
+  cancel-in-progress: true
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out main
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GH_PAGES_PAT }}
+
+      - name: Publish README to gh-pages
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          source_readme="${RUNNER_TEMP}/README.md"
+          cp README.md "${source_readme}"
+
+          git config user.name "github-actions[bot]"
+          git config user.email \
+            "41898282+github-actions[bot]@users.noreply.github.com"
+
+          if git ls-remote --exit-code --heads origin gh-pages >/dev/null 2>&1; then
+            git fetch origin \
+              gh-pages:refs/remotes/origin/gh-pages
+            git switch --force-create gh-pages origin/gh-pages
+          else
+            git switch --orphan gh-pages
+          fi
+
+          cp "${source_readme}" README.md
+          git add README.md
+
+          if git diff --cached --quiet; then
+            echo "README.md is already up to date."
+            exit 0
+          fi
+
+          git commit \
+            -m "docs: publish README from ${GITHUB_SHA::7}"
+
+          git push origin HEAD:gh-pages
