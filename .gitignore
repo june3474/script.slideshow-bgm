@@ -133,15 +133,21 @@ dmypy.json
 .prompts/
 tests/manual/
 
-# README screenshots. The add-on directory *is* what Kodi installs, so anything
-# tracked here lands on every user's device -- including those who install by
-# cloning, which .gitattributes' export-ignore cannot help with. The images
-# therefore live only on the orphan `gh-pages` branch, which the README links
-# to by absolute URL; this directory is just the local source they are
-# published from. To (re)publish after changing a screenshot:
+# README screenshots are NOT kept on this branch. A Kodi add-on directory is
+# what Kodi installs, so anything tracked here lands on every user's device --
+# including those who install by cloning into ~/.kodi/addons, which
+# .gitattributes' export-ignore cannot prevent. The images live on the orphan
+# `gh-pages` branch instead, and the README links to them by absolute URL
+# (https://raw.githubusercontent.com/june3474/script.slideshow-bgm/gh-pages/img/).
 #
-#   git worktree add --orphan -b gh-pages ../bgm-pages   # first time only
-#   cp -r docs/img ../bgm-pages/
+# To add or replace one, work on that branch directly:
+#
+#   git worktree add ../bgm-pages gh-pages
+#   cp new-shot.jpg ../bgm-pages/img/
 #   git -C ../bgm-pages add img && git -C ../bgm-pages commit -m "Update screenshots"
-#   git -C ../bgm-pages push -u origin gh-pages
+#   git -C ../bgm-pages push
+#
+# Screenshots are downscaled to 1000px wide; full-screen captures are saved as
+# JPEG (quality 88, no chroma subsampling, which keeps UI text legible) and
+# flat-colour ones as PNG.
 docs/

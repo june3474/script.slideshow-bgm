@@ -1,12 +1,25 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <addon id="script.slideshow-bgm"
        name="Slideshow-BGM"
-       version="0.1.0"
+       version="1.0.0"
        provider-name="dks">
   <requires>
     <import addon="xbmc.python" version="3.0.0"/>
   </requires>
-  <extension point="xbmc.python.script" library="addon.py"/>
+  <!--
+    `provides` lists the add-on under Kodi's "Picture add-ons" category rather
+    than the default "Program add-ons". It is parsed for any extension point,
+    not only xbmc.python.pluginsource: CAddonInfoBuilder::ParseXMLExtension
+    reads it generically, and the browser's category listing filters on
+    addon->HasType(type), which CAddonInfo::ProvidesSubContent satisfies
+    regardless of the main type being SCRIPT.
+
+    Categorised by what the user thinks they are running (a slideshow of
+    pictures that happens to have music), not by what it technically plays.
+  -->
+  <extension point="xbmc.python.script" library="addon.py">
+    <provides>image</provides>
+  </extension>
   <extension point="xbmc.service" library="service.py"/>
   <extension point="xbmc.addon.metadata">
     <summary lang="en_gb">Background music for image/video slideshows</summary>

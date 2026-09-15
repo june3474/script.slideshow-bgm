@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "script.slideshow-bgm"
-version = "0.1.0"
+version = "1.0.0"
 description = "Kodi Script Mode addon: background music for image/video slideshows"
 requires-python = ">=3.8"
 dependencies = []
