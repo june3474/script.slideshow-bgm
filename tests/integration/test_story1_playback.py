@@ -518,7 +518,9 @@ def test_session_start_names_the_source_and_shuffle_setting(
     _run_slideshow(monkeypatch)
 
     assert _one_log("session start:") == (
-        "session start: source=PLAYLIST:{0} shuffle=True".format(playlist_path),
+        "session start: version=0.1.0 source=PLAYLIST:{0} shuffle=True".format(
+            playlist_path
+        ),
         xbmc.LOGINFO,
     )
 
