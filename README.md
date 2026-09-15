@@ -99,6 +99,17 @@ the active skin:
 This is what keeps the add-on running only while a slideshow is on screen, instead of
 for the whole time Kodi is up.
 
+Editing a skin file you didn't write is invasive, and that trade-off was made
+deliberately, not by default. A background service was considered and rejected: Kodi
+emits no event when a slideshow starts, so a service would have to poll for it
+continuously for the entire session, whether or not a slideshow is ever opened. The
+skin hook instead costs nothing while idle and fires at the instant the slideshow
+starts, leaving the full timing budget for playback. A resident service would also
+violate the add-on's own constitution, which forbids anything outliving a single
+script run. Attaching to the slideshow window directly from Python was also considered
+and found technically impossible — Kodi's native slideshow window does not dispatch to
+Python callbacks at all.
+
 ![The hook added to a skin's SlideShow.xml](https://raw.githubusercontent.com/june3474/script.slideshow-bgm/gh-pages/img/hookup_after.png)
 
 Before changing a skin file, the add-on creates a sibling backup with the suffix
