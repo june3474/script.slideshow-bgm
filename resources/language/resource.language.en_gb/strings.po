@@ -1,46 +1,83 @@
 # Kodi Media Center language file
-# Addon Name: Slideshow with BGM
-# Addon id: script.slideshow-BGM
+# Addon Name: Slideshow-BGM
+# Addon id: script.slideshow-bgm
 # Addon Provider: dks
 msgid ""
 msgstr ""
-"Project-Id-Version: Kodi Addons\n"
-"Report-Msgid-Bugs-To: alanwww1@kodi.org\n"
-"POT-Creation-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"Last-Translator: Kodi Translation Team\n"
-"Language-Team: English (http://www.transifex.com/projects/p/xbmc-addons/language/en/)\n"
-"MIME-Version: 1.0\n"
+"Project-Id-Version: Slideshow-BGM\n"
 "Content-Type: text/plain; charset=UTF-8\n"
-"Content-Transfer-Encoding: 8bit\n"
-"Language: en\n"
-"Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-
-msgctxt "#32001"
-msgid "BGM"
+# settings.xml — labels
+msgctxt "#30000"
+msgid "Source type"
 msgstr ""
 
-msgctxt "#32010"
-msgid "Select Your BGM"
-msgstr ""
-
-msgctxt "#32011"
-msgid "Type"
-msgstr ""
-
-msgctxt "#32012"
+msgctxt "#30001"
 msgid "Playlist"
 msgstr ""
 
-msgctxt "#32013"
+msgctxt "#30002"
 msgid "Directory"
 msgstr ""
 
-msgctxt "#32014"
-msgid "Random"
+msgctxt "#30003"
+msgid "Playlist file"
 msgstr ""
 
-msgctxt "#32100"
-msgid "For .xsp(smart playlist) & .pls playlist, this setting is pointless and always set to true."
+msgctxt "#30004"
+msgid "Music directory"
+msgstr ""
+
+msgctxt "#30005"
+msgid "Shuffle"
+msgstr ""
+
+msgctxt "#30006"
+msgid "When music is already playing"
+msgstr ""
+
+msgctxt "#30007"
+msgid "Stop it and play background music"
+msgstr ""
+
+msgctxt "#30008"
+msgid "Leave it alone (keep what's already playing)"
+msgstr ""
+
+msgctxt "#30009"
+msgid "Background Music"
+msgstr ""
+
+# settings.xml — help text
+msgctxt "#30020"
+msgid "Choose whether background music comes from a single playlist file or every audio file in a directory."
+msgstr ""
+
+msgctxt "#30021"
+msgid "An .m3u, .pls, or .xsp playlist to use as background music.\nA smart playlist (.xsp) must be of the Music (Songs) type."
+msgstr ""
+
+msgctxt "#30022"
+msgid "A directory recursively scanned for supported audio files."
+msgstr ""
+
+msgctxt "#30023"
+msgid "Play background music in random order.\nIgnored for .pls and .xsp playlists, which always use their own order."
+msgstr ""
+
+msgctxt "#30024"
+msgid "What to do if Kodi is already playing music when a slideshow starts."
+msgstr ""
+
+# Addon-facing messages (FR-011, FR-012, FR-015, D-010)
+msgctxt "#32001"
+msgid "Slideshow-BGM integration failed — See kodi.log"
+msgstr ""
+
+msgctxt "#32004"
+msgid "Background music is unavailable for this slideshow.\nContinuing without it."
+msgstr ""
+
+msgctxt "#32005"
+msgid "The selected smart playlist is not a Music(Songs) playlist.\nContinuing without background music."
 msgstr ""

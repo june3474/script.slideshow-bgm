@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<addon id="script.bgmprobe"
+       name="BGM Probe"
+       version="0.0.1"
+       provider-name="dks">
+  <requires>
+    <import addon="xbmc.python" version="3.0.0"/>
+  </requires>
+  <extension point="xbmc.service" library="service.py"/>
+  <extension point="xbmc.addon.metadata">
+    <summary lang="en_gb">Throwaway probe: logs Kodi player and slideshow behavior</summary>
+    <description lang="en_gb">Development tool for script.slideshow-bgm Phase 0 verification. Logs every Player and Monitor callback with a state snapshot, prefixed [BGM-PROBE]. Not for distribution; uninstall after use.</description>
+    <platform>all</platform>
+    <license>MIT</license>
+  </extension>
+</addon>

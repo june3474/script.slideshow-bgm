@@ -1,30 +1,17 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<addon id="script.slideshow-bgm" name="Slideshow-bgm" version="0.4.2" provider-name="june3474">
+<addon id="script.slideshow-bgm"
+       name="Slideshow-BGM"
+       version="0.1.0"
+       provider-name="dks">
   <requires>
     <import addon="xbmc.python" version="3.0.0"/>
   </requires>
-  <extension point="xbmc.python.script" library="addon.py">
-    <provides>image</provides>
-  </extension>
-  <extension point="xbmc.service" library="service.py" />
+  <extension point="xbmc.python.script" library="addon.py"/>
+  <extension point="xbmc.service" library="service.py"/>
   <extension point="xbmc.addon.metadata">
-    <summary lang="en_GB">Slideshow with BGM</summary>
-    <description lang="en_GB">Play background music while slideshowing</description>
+    <summary lang="en_gb">Background music for image/video slideshows</summary>
+    <description lang="en_gb">Plays background music for the duration of a Kodi slideshow. Music pauses automatically when a video clip in the slideshow plays and resumes at the following track once the clip ends, until the slideshow itself exits.</description>
     <platform>all</platform>
-    <license>GPL-3.0-only</license>
-    <website>https://github.com/june3474/script.slideshow-bgm</website> <!-- may be omitted.  -->
-    <email>june3474@gmail.com</email> <!-- may be omitted.  -->
-    <source>https://github.com/june3474/script.slideshow-bgm</source>
-    <news>Version 0.4.0
-    - Change addon id to 'script.slideshow-bgm' from 'script.service.slideshow-bgm'.
-    - Add the support of smart playlist(xsp).
-    </news>
-    <assets>
-        <icon>docs/img/icon.png</icon>
-        <fanart></fanart> <!-- optional -->
-        <banner></banner> <!-- optional -->
-        <clearlogo></clearlogo> <!-- optional  -->
-        <screenshot></screenshot> <!-- optional, max 10  -->
-    </assets>
+    <license>MIT</license>
   </extension>
 </addon>

@@ -1,47 +1,21 @@
-# -*- coding: utf-8 -*-
+"""Script Mode entry point: one process per slideshow (FR-001, FR-004, D-007).
 
-import sys
-import xbmc, xbmcgui
-from resources.lib import addon, addonName
-from resources.lib.player import Player
-from resources.lib.utils import check_config, show_yesno, log, notify
+Launched by the ``<onload>`` hook the service installs into the active skin's
+``SlideShow.xml``, so this runs exactly when a slideshow window opens and
+returns when that slideshow exits. Everything it does -- reading settings,
+starting background music, waiting the slideshow out, tearing down -- belongs
+to :class:`resources.lib.session.SlideshowSession`; keeping this file to a
+construction and a call is what keeps the dependency graph in
+contracts/modules.md one-directional.
+"""
+
+from resources.lib.session import SlideshowSession
 
 
-log("Slideshow-bgm started.")
+def main() -> None:
+    """Build the session and run it. One process per slideshow."""
+    SlideshowSession().run()
 
-# check configuration
-while True:
-    msg = check_config()
-    if msg == '':  # configuration is OK
-        break
-    else:
-        if show_yesno(msg 
-                      + '\nClick OK to proceed to Slideshow-bgm settings'
-                      + '\nCancel will abort Slideshow-bgm'):
-            addon.openSettings()
-        else:
-            log('Aborted by user.')
-            sys.exit(1)
 
-try:
-    player = Player()
-except ValueError as E:
-    notify(E.__str__(), heading=addonName+" Error", icon=xbmcgui.NOTIFICATION_ERROR)
-    sys.exit(1)
-
-#player.play_bgm()
-
-# Ugly! but Blocking methods such as Tread.join or Lock.acquire does not work.
-# They block all processes following and even callback functions of Player.
-# There seems to be no other way as of May 2023.
-# https://kodi.wiki/view/Service_add-ons
-monitor = xbmc.Monitor()
-while True:
-    if not xbmc.getCondVisibility('Slideshow.IsActive') or monitor.abortRequested():
-        break
-    else:
-        xbmc.sleep(500)
-
-player.stop()
-
-log('Slideshow-bgm ended.')
+if __name__ == "__main__":
+    main()

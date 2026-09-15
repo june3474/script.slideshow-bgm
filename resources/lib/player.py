@@ -1,194 +1,235 @@
-# -*- coding: utf-8 -*-
-"""A subclass of :class:`xmbc.Player`"""
+"""Start background music and track which item is playing (FR-001, D-005, D-006).
 
-import _thread as thread
-import os
-import xbmc, xbmcvfs
-from . import addon
-from .utils import create_playlist, log
+Playback is started with the ``PlayMedia`` builtin rather than
+``xbmc.Player.play()`` (D-006). By the time this module ever sees a path, it
+is always a plain ``.m3u`` -- ``.pls``/``.xsp`` sources are resolved to one by
+``playlist.py`` first (R-8, added 2026-09-14): real-device testing found
+Kodi's own ``playoffset`` never advances past track 1 for those two formats,
+so this module's resume arithmetic below only ever has to work against the
+one format it is proven to work for. This module itself still never branches
+on source format.
+
+The order in :meth:`BgmPlayer.start` is fixed by D-006 and is not cosmetic:
+``PlayerControl(RandomOn|RandomOff|RepeatAll)`` only take effect while a player
+is active, so playback MUST be established first and the controls applied
+immediately after -- with the fade-in held until they are in place, so the user
+never hears an unshuffled first moment.
+
+The current track index is read from Kodi's own infolabel inside
+``onAVStarted`` (D-005), never polled and never counted internally. The index
+is recorded exactly as Kodi reports it: the probe (2026-09-13, Kodi 21.3)
+confirmed ``Playlist.Position(music)`` is **1-indexed**. The only ``+1`` in
+this module is :func:`resume_offset`, the resume target FR-003 asks for.
+
+``onPlayBackStopped`` and ``onPlayBackEnded`` share one handler because they
+are indistinguishable in effect (contracts/modules.md): the probe saw only
+``onPlayBackStopped`` when a clip claimed the player, but which one Kodi picks
+is not a fact this addon may rely on. The handler does not interpret the event
+-- it establishes whether a clip is on screen (``Slideshow.IsVideo``) and
+reports "a clip started" or "a clip ended" to the two callables its owner
+passed in. What those mean for the session's state machine is
+``session.py``'s business; deciding it here would mean importing the owner,
+closing the cycle contracts/modules.md's dependency graph forbids.
+"""
+
+from typing import Callable, NamedTuple
+
+import xbmc
+
+from resources.lib import fader, messages
+from resources.lib.fader import Direction
+
+PLAYLIST_POSITION_INFOLABEL = "Playlist.Position(music)"
+PLAYLIST_LENGTH_INFOLABEL = "Playlist.Length(music)"
+
+SLIDESHOW_IS_VIDEO_CONDITION = "Slideshow.IsVideo"
+
+#: ``playoffset`` used when no usable track index was ever recorded: restart
+#: the playlist rather than guess at a resume point (D-004, data-model.md).
+PLAYLIST_START_OFFSET = 0
 
 
-class Player(xbmc.Player):
-    """A subclass of :class:`xbmc.Player`.
+class BgmPosition(NamedTuple):
+    """Which BGM track is playing (data-model.md ``BgmPosition``).
 
-    The main features of this class are:
-        - To override callback functions like :meth:`onPlayBackStopped` and 
-        :meth:`onPlayBackEnded`.
-        - To start a thread which keeps track of the position of currently 
-          playing background music.
-    
-    .. Note::
-
-        :class:`Player` seems to be a Singleton.
-
+    Attributes:
+        track_index: The index Kodi reported, verbatim and 1-indexed (D-005).
+        track_count: The playlist length Kodi reported, or ``0`` when it was
+            never read or the read failed -- mirroring how ``track_index=0``
+            marks :data:`UNKNOWN_POSITION`'s "nothing read yet" state.
+        is_valid: False before the first ``onAVStarted``, and whenever the
+            position infolabel read failed.
     """
-    def __init__(self):
-        super().__init__()
 
-        # Check if the playlist is vaild.
-        self.playlist = self.get_playlist_file()
-        if not self.playlist:
-            raise ValueError('Invalid Playlist.')
-        self.playlist_type = os.path.splitext(self.playlist)[1:][0][1:]
-        # For playlist of which length is 0 like .xsp or pls with audio stream,
-        # playoffset is pointless and ignored(no error).
-        self.random = addon.getSettingBool('random') if self.playlist_type == 'm3u' else True
-        # After Mute() is called, The value of ``Player.Muted`` does not change
-        # immediatly. So we manage the mute state ourselves via ``is_muted``.
-        self.is_muted = xbmc.getCondVisibility('Player.Muted')
-        self.bgm_position = -1
-        self.set_player()
+    track_index: int
+    track_count: int
+    is_valid: bool
 
-    def set_player(self):
-        """Set the properties of randomness and repeat.
 
-        A monkey patch for PlayerControl() that works only after the Player starts.
-        
-        """
-        self.mute(True)
-        xbmc.executebuiltin('PlayMedia(%s)' % self.playlist)
-        xbmc.executebuiltin('PlayerControl(Play)')  # Actually, Pause.
-        if self.random:
-            xbmc.executebuiltin('PlayerControl(RandomOn)')
-        else:
-            xbmc.executebuiltin('PlayerControl(RandomOff)')
-        # Set repeat. by default, RepeatAll
-        xbmc.executebuiltin('PlayerControl(RepeatAll)')
-        xbmc.executebuiltin('PlayerControl(Stop)')
-        self.mute(False)
+#: What :attr:`BgmPlayer.position` holds before any usable read (D-005).
+UNKNOWN_POSITION = BgmPosition(track_index=0, track_count=0, is_valid=False)
 
-        # Thread will automatically end when main thread does.
-        thread.start_new_thread(self.track_bgm, ())
 
-    def mute(self, switch=None):
-        """Toggle or set the mute state of the Player
-        
+def resume_offset(position: BgmPosition) -> int:
+    """Which playlist entry a resume from ``position`` targets (FR-003, D-004).
+
+    One path for every source: the track *after* the interrupted one, from its
+    beginning. T041 proved ``PlayMedia``'s ``playoffset`` does not wrap past
+    the end of a playlist the way ``PlayerControl(RepeatAll)`` wraps a track
+    that finishes naturally -- Kodi's own source (``PlayerBuiltins.cpp``)
+    clamps an out-of-range ``playoffset`` to the last track and replays it,
+    forever. So the addon computes the wrap itself from ``track_count``
+    (``Playlist.Length(music)``, read alongside ``track_index`` in
+    ``onAVStarted``): the last track resumes into track 1.
+
+    Args:
+        position: The resume point frozen when a clip claimed the player.
+
+    Returns:
+        The ``playoffset`` to hand ``PlayMedia``: ``track_index + 1``, wrapped
+        to ``1`` when that would exceed ``track_count``; or
+        :data:`PLAYLIST_START_OFFSET` when no usable index was ever recorded.
+        When ``track_count`` itself is unknown, falls back to the unwrapped
+        ``track_index + 1`` -- no regression versus today, since Kodi already
+        clamps at the boundary regardless.
+    """
+    if not position.is_valid:
+        return PLAYLIST_START_OFFSET
+    next_index = position.track_index + 1
+    if position.track_count > 0 and next_index > position.track_count:
+        return 1
+    return next_index
+
+
+# ``type: ignore[misc]`` -- Kodistubs ships no ``py.typed`` marker, so mypy
+# resolves ``xbmc`` to ``Any`` (see pyproject.toml's mypy override) and
+# ``--strict`` refuses to subclass it. Subclassing ``xbmc.Player`` is the only
+# way Kodi delivers playback callbacks, so the alternative is not subclassing
+# at all.
+class BgmPlayer(xbmc.Player):  # type: ignore[misc]
+    """Kodi player bound to this slideshow's background music.
+
+    Attributes:
+        position: The :class:`BgmPosition` last reported by ``onAVStarted``.
+            Public on purpose -- it is the resume point the session freezes
+            when a clip interrupts.
+    """
+
+    def __init__(
+        self, on_clip_start: Callable[[], None], on_clip_end: Callable[[], None]
+    ) -> None:
+        """Register with Kodi and start out with no known track position.
+
         Args:
-            switch (None or bool): 
-                If ``switch`` is None, toggle the mute state.
-                elif ``switch`` is True, mute on.
-                else ``switch`` is False, mute off.
-
+            on_clip_start: Called when a playback callback arrives while a
+                slideshow video clip is on screen.
+            on_clip_end: Called when one arrives while it is not. Both are
+                plain callables rather than a session reference, so this
+                module never imports its owner (contracts/modules.md).
         """
-        if switch is None or (switch ^ self.is_muted):  # XOR
-            xbmc.executebuiltin('Mute')  # 'Mute()' also works
-            self.is_muted = not self.is_muted
+        super().__init__()
+        self.position: BgmPosition = UNKNOWN_POSITION
+        self._on_clip_start = on_clip_start
+        self._on_clip_end = on_clip_end
+        self._playlist = ""
 
-    def get_playlist_file(self):
-        """Get the filepath of the background music playlist.
+    def start(self, playlist: str, shuffle: bool) -> None:
+        """Begin background music and fade it in (FR-001, FR-008, FR-013).
 
-        If the user choose a playlist in the addon configuration, this function 
-        returns the path of the playlist chosen. Or, if user choose a directory, 
-        this function first looks for ``bgm.m3u`` file in the addon profile 
-        directory.
-        FYI, the ``addon profile directory`` is:
-            On linux, $HOME/.kodi/userdata/script.slideshow-bgm/;
-            On Windows, %AppData%\\Roaming\\Kodi\\userdata\\script.slideshow-bgm
-
-        If ``bgm.m3u`` exists AND its modification time is newer than 
-        ``settings.xml``'s in the same directory, return the path of ``bgm.m3u``; 
-        otherwise, it creates ``bgm.m3u`` in the ``addon profile directory`` 
-        and returns the path of it.
-
-        Returns:
-            str: the path of the playlist if successful, ``None``  otherwise.
-
+        Args:
+            playlist: Absolute path of the playlist to hand to ``PlayMedia``.
+                Remembered so :meth:`resume_at` can replay the same one.
+            shuffle: Whether to play in random order. Ignored by Kodi for
+                ``.pls``/``.xsp``, which keep their native order (FR-008).
         """
-        if addon.getSetting('type') == 'Playlist':
-            playlist_file = addon.getSetting('playlist')
-        else:  # 'Directory'
-            profile_dir = xbmcvfs.translatePath(addon.getAddonInfo('profile'))
-            playlist_file = os.path.join(profile_dir, 'bgm.m3u')
-            settings_file = os.path.join(profile_dir, 'settings.xml')
-            playlist_st = xbmcvfs.Stat(playlist_file)
-            settings_st = xbmcvfs.Stat(settings_file)
-            # We don't use os.path.exists() here due to 'filesystemencoding'
-            if xbmcvfs.exists(playlist_file) and \
-                    playlist_st.st_mtime() > settings_st.st_mtime():
-                pass
-            else:
-                bgm_dir = addon.getSetting('directory').encode('utf-8')
-                playlist_file = create_playlist(bgm_dir)
+        self._playlist = playlist
+        xbmc.executebuiltin("PlayMedia({0})".format(playlist))
+        xbmc.executebuiltin(
+            "PlayerControl(RandomOn)" if shuffle else "PlayerControl(RandomOff)"
+        )
+        # Assumption 5: BGM loops rather than ending before the slideshow.
+        xbmc.executebuiltin("PlayerControl(RepeatAll)")
+        fader.fade(Direction.IN, fader.capture_baseline())
 
-        return playlist_file
+    def resume_at(self, position: BgmPosition) -> None:
+        """Replay from the track after ``position`` and fade in (FR-003).
 
-    def play_bgm(self):
-        """Play background music if currently not playing video/audio.
+        One path for every source -- no seek, no offset within a track, no
+        per-format branch (D-004). The baseline is re-read here rather than
+        reused from before the clip, so a volume change made in the meantime
+        is what the fade ramps toward (FR-016, D-012).
 
-        Note:
-            When this method is called by onPlayBackStopped()/onPlayBackended(),
-            Player might be playing something already.
-            For example, If we have selected the option to allow a slideshow 
-            with videos, and if any video clips are included in the slideshow, 
-            Player might be playing a video when this method starts to run.
-            Or, after the callback functions were called, kodi might request 
-            to play something before this function actually starts to play BGM.
-
+        Args:
+            position: The resume point frozen when the clip claimed the
+                player. An invalid one restarts the playlist instead of
+                guessing, which is worth a warning: it is audible.
         """
-        # ``xbmc.getCondVisibility('Slideshow.IsVideo')`` is necessary because
-        # when the next slideshow item is a video clip and it is on the process
-        # of loading--i.e., it's not playing yet--we don't need to play bgm.
-        if self.isPlaying() or xbmc.getCondVisibility('Slideshow.IsVideo'):
-            # Wait for upto 500ms considering the asynchronousness of infolabels.
-            for i in range(5):
-                xbmc.sleep(100)
-                if not (self.isPlaying() or xbmc.getCondVisibility('Slideshow.IsVideo')):
-                    break
-                elif i == 4:
-                    log('play rejected. title: %s slide: %s' % \
-                        (xbmc.getInfoLabel('Player.Title'), xbmc.getInfoLabel('Slideshow.Filename')))
-                    return
+        offset = resume_offset(position)
+        if not position.is_valid:
+            messages.log(
+                "Playlist.Position(music) unreadable; resuming from playlist start",
+                xbmc.LOGWARNING,
+            )
+        xbmc.executebuiltin(
+            "PlayMedia({0},playoffset={1})".format(self._playlist, offset)
+        )
+        fader.fade(Direction.IN, fader.capture_baseline())
 
-        log('play started. title: %s slide: %s' % \
-            (xbmc.getInfoLabel('Player.Title'), xbmc.getInfoLabel('Slideshow.Filename')))
-        
-        # We use executebuiltin() because xbmc.Player.play() does not play
-        # the smart playlist(.xsp).
-        if self.random:
-            #self.play(item=self.playlist, startpos=self.bgm_position+1)
-            xbmc.executebuiltin('PlayMedia(%s)' % self.playlist)
+    def onPlayBackStopped(self) -> None:
+        """Kodi stopped playback -- see :meth:`_on_playback_interrupted`."""
+        self._on_playback_interrupted()
+
+    def onPlayBackEnded(self) -> None:
+        """Kodi ended playback -- see :meth:`_on_playback_interrupted`."""
+        self._on_playback_interrupted()
+
+    def _on_playback_interrupted(self) -> None:
+        """Report a playback callback as a clip start or a clip end (D-001).
+
+        The one shared handler both callbacks are contractually required to
+        use. It decides nothing beyond what is on screen *now*: a clip means
+        "a clip is playing", anything else means "no clip is playing", and
+        what either implies for a session that may already be suspended --
+        or already torn down -- belongs to the owner these callables came
+        from.
+        """
+        if xbmc.getCondVisibility(SLIDESHOW_IS_VIDEO_CONDITION):
+            self._on_clip_start()
         else:
-            #self.play(item=self.playlist, startpos=self.bgm_position+1)
-            xbmc.executebuiltin('PlayMedia(%s, playoffset=%d)' % \
-                                (self.playlist, self.bgm_position+1))
-            
-    def track_bgm(self):
-        """Keep track of bgm playing.
+            self._on_clip_end()
 
+    def onAVStarted(self) -> None:
+        """Record the track index Kodi reports for the new item (D-005).
+
+        Ignored while a slideshow video clip is on screen: the callback fires
+        for the slideshow's own clips too, and ``Playlist.Position(music)``
+        does not describe them (contracts/modules.md). Reading it there would
+        overwrite the resume point with a clip's index -- or invalidate it and
+        log a warning about an index nothing was asking for.
+
+        ``getInfoLabel`` returns a string -- empty when nothing is playing --
+        so the conversion is guarded and a failed read leaves the position
+        invalid rather than stale.
         """
-        while xbmc.getCondVisibility('Slideshow.IsActive'):
-            if self.isPlayingAudio():
-                position = int(xbmc.getInfoLabel('Playlist.Position(music)'))
-                # Guard condition from kodi's thread intervention.
-                if position >= 0:
-                    self.bgm_position = position
-            xbmc.sleep(1000)
-
-    def onPlayBackStopped(self):
-        """Callback function called when audio/video play stops by user.
-
-        In particular, this event happens when the user click the '->' button 
-        to move on the next item while slideshowing a video clip. 
-
-        """
-        self.play_bgm()
-        
-    def onPlayBackEnded(self):
-        """Callback function called when audio/video play ends normally.
-
-        In particular, this event happens when slideshowing a video clip ends.
-
-        """
-        self.play_bgm()
-        
-    def onAVStarted(self):
-        """Callback function called when audio/video has actually started.
-
-        Sometimes, e.g., after slideshowing a video clip, slideshow pauses.(issue #7) 
-
-        """       
-        if self.isPlayingAudio() and xbmc.getCondVisibility('Slideshow.IsPaused'):
-            #json = '{"jsonrpc":"2.0", "method":"%s", "params":%s, "id":1}' \
-            #    % ('Input.ButtonEvent', '{"button":"space", "keymap":"KB"}')
-            #xbmc.executeJSONRPC(json)
-            xbmc.executebuiltin('Action(PlayPause)')
+        if xbmc.getCondVisibility(SLIDESHOW_IS_VIDEO_CONDITION):
+            return
+        raw = xbmc.getInfoLabel(PLAYLIST_POSITION_INFOLABEL)
+        try:
+            track_index = int(raw)
+        except (TypeError, ValueError):
+            self.position = UNKNOWN_POSITION
+            messages.log(
+                "Playlist.Position(music) unreadable; resuming from playlist start",
+                xbmc.LOGWARNING,
+            )
+            return
+        # track_count falls back to 0 (unknown) when unreadable -- resume_offset
+        # then falls back to its own non-wrapping behavior; nothing here needs
+        # to invalidate a position read that otherwise succeeded.
+        try:
+            track_count = int(xbmc.getInfoLabel(PLAYLIST_LENGTH_INFOLABEL))
+        except (TypeError, ValueError):
+            track_count = 0
+        self.position = BgmPosition(
+            track_index=track_index, track_count=track_count, is_valid=True
+        )

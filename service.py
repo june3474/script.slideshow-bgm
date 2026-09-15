@@ -1,43 +1,43 @@
-# -*- coding: utf-8 -*-
-"""Insert interconnection tag into skin and check settings
+"""Run-once service entry point: hook the addon into the active skin (D-007).
 
- This script automatically starts--if the addon is enabled--when a user profile
- logs in or on Kodi startup, and stopped when the user profile logs out.
-
+Registered at the ``xbmc.service`` extension point so it runs once per Kodi
+start/profile login, then exits immediately -- it holds no thread, timer, or
+listener, which is what keeps this compatible with constitution principle 2.2
+despite registering at the service extension point (justified in plan.md's
+Complexity Tracking).
 """
 
-import sys
-import shutil
-import xbmcgui
-from resources.lib.skinconnector import SkinConnector
-from resources.lib.utils import log, notify, check_config
-from resources.lib import addonName
+import xbmc
 
-msg = ''
+from resources.lib import addon, messages, skinconnector
 
-# check configuration
-msg = check_config()
-if msg:
-    log('Configuration check, Failed: %s' % msg)
-else:
-    log('Configuration check, OK!')
+STRING_INTEGRATION_FAILED = 32001
 
-# check interconnection to skin
-connector = SkinConnector()
-if connector.check_hooked():
-    log('Skin connection check, OK!')
-else:
-    if connector.check_permission():
-        shutil.copy(connector.target, connector.target + ".original")
-        connector.insert_tag()
-        log('The interconnetion tag has been inserted to %s\n' % connector.target +
-            'The original file was saved as %s' % connector.target + '.original')
-    else:  # installed && enabled && not hooked && not writable
-        log('Failed to write the interconnecting tag into %s' % connector.target)
-        if msg:
-             msg = msg + ' & Skin interconnection failed.'
-        else:
-            msg = 'Skin interconnection failed.'
-        
-if msg:
-    notify(msg, heading=addonName+" Error", icon=xbmcgui.NOTIFICATION_ERROR)
+
+def main() -> None:
+    """Install the skin hook into every SlideShow.xml the active skin ships.
+
+    Any failure -- no file found at all, or ``install()`` rejecting one --
+    surfaces as exactly one non-blocking notification for the whole run
+    (FR-015): skinconnector has already logged the specific reason and remedy
+    per file it looked at, so this only decides the run's overall verdict.
+    """
+    paths = skinconnector.find_slideshow_xml()
+    if not paths:
+        messages.log(
+            "skin hook: install failed — no SlideShow.xml found under "
+            "special://skin for the active skin. Fix: this skin may not "
+            "support slideshow integration; try a different skin",
+            xbmc.LOGERROR,
+        )
+        messages.notify(addon.getLocalizedString(STRING_INTEGRATION_FAILED))
+        return
+    # A list comprehension, not all(generator(...)): every file MUST be
+    # attempted even if an earlier one fails (FR-015 -- none may be skipped).
+    results = [skinconnector.install(path) for path in paths]
+    if not all(results):
+        messages.notify(addon.getLocalizedString(STRING_INTEGRATION_FAILED))
+
+
+if __name__ == "__main__":
+    main()

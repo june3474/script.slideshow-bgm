@@ -1,7 +1,12 @@
-# -*- coding: utf-8 -*-
+"""Module-level singletons shared by every ``resources.lib`` module.
+
+Resolved once at import, per contracts/modules.md.
+"""
 
 import xbmcaddon
+import xbmcvfs
 
-addonId = 'script.slideshow-bgm'
-addonName = 'slideshow-bgm'
-addon = xbmcaddon.Addon(addonId)
+addon = xbmcaddon.Addon()
+addon_id: str = addon.getAddonInfo("id")
+addon_name: str = addon.getAddonInfo("name")
+profile_dir: str = xbmcvfs.translatePath(addon.getAddonInfo("profile"))

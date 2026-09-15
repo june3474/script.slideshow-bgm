@@ -1,0 +1,19 @@
+# Keep development scaffolding out of the packaged add-on.
+#
+# `export-ignore` excludes a path from `git archive`, which is what produces
+# GitHub's automatic "Source code (zip)" download — the ZIP users install from
+# (README section 1-2). Everything below stays browsable on GitHub; it just
+# does not ship to users.
+#
+# Note the limit: `export-ignore` does NOT affect `git clone`, so anyone who
+# installs by cloning into ~/.kodi/addons (README section 1-1) still gets the
+# whole tree. Screenshots are kept off this branch entirely for that reason —
+# see .gitignore's docs/ entry.
+
+.gitattributes  export-ignore
+.gitignore      export-ignore
+.github/        export-ignore
+specs/          export-ignore
+tests/          export-ignore
+tools/          export-ignore
+pyproject.toml  export-ignore

@@ -1,0 +1,59 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "script.slideshow-bgm"
+version = "0.1.0"
+description = "Kodi Script Mode addon: background music for image/video slideshows"
+requires-python = ">=3.8"
+dependencies = []
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "Kodistubs>=20.0.0",
+    "ruff>=0.4",
+    # Pinned below 1.14: newer mypy dropped `python_version = 3.8` support,
+    # and this addon's floor (Kodi v20 Nexus) is Python 3.8 -- plan.md
+    # Technical Context.
+    "mypy>=1.8,<1.14",
+]
+
+[tool.setuptools]
+py-modules = ["addon", "service"]
+
+[tool.ruff]
+target-version = "py38"
+line-length = 88
+# tools/kodi-probe is a throwaway dev instrument (see its own README) that
+# predates these gates and is not part of the shipped addon.
+exclude = ["tests/fakes", "tests/manual", "tools", "specs"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "C90", "D"]
+ignore = ["D203", "D212"]
+
+[tool.ruff.lint.mccabe]
+max-complexity = 10
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["D"]
+
+[tool.mypy]
+python_version = "3.8"
+strict = true
+exclude = ["tests/fakes", "tests/manual", "tools"]
+
+[[tool.mypy.overrides]]
+# Kodistubs ships real (if inert) xbmc*.py files but no py.typed marker, so
+# mypy would otherwise flag every Kodi import as untyped.
+module = ["xbmc", "xbmcgui", "xbmcvfs", "xbmcaddon", "xbmcdrm", "xbmcplugin"]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests/unit", "tests/integration"]
+pythonpath = ["."]

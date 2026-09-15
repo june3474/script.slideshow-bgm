@@ -1,59 +1,127 @@
-<?xml version="1.0" ?>
-<settings version="1">
-	<section id="script.slideshow-bgm">
-		<category id="bgm" label="32001" help="">
-			<group id="1" label="32010">
-				<setting id="type" type="string" label="32011" help="">
-					<level>0</level>
-					<default>Playlist</default>
-					<constraints>
-						<options>
-							<option label="Playlist">Playlist</option>
-							<option label="Directory">Directory</option>
-						</options>
-					</constraints>
-					<control type="spinner" format="string"/>
-				</setting>
-				<setting id="playlist" type="path" label="32012" help="">
-					<level>0</level>
-					<default>Not Selected</default>
-					<constraints>
-						<writable>false</writable>
-						<masking>*.pls|*.m3u|*.xsp</masking>
-					</constraints>
-					<dependencies>
-						<dependency type="visible">
-							<condition operator="is" setting="type">Playlist</condition>
-						</dependency>
-					</dependencies>
-					<control type="button" format="file">
-						<heading>32012</heading>
-					</control>
-				</setting>
-				<setting id="directory" type="path" label="32013" help="">
-					<level>0</level>
-					<default>Not Selected</default>
-					<constraints>
-						<sources>
-							<source>local</source>
-						</sources>
-						<writable>false</writable>
-					</constraints>
-					<dependencies>
-						<dependency type="visible">
-							<condition operator="is" setting="type">Directory</condition>
-						</dependency>
-					</dependencies>
-					<control type="button" format="path">
-						<heading>32013</heading>
-					</control>
-				</setting>
-				<setting id="random" type="boolean" label="32014" help="32100">
-					<level>0</level>
-					<default>true</default>
-					<control type="toggle"/>
-				</setting>
-			</group>
-		</category>
-	</section>
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<!--
+  Contract: specs/001-slideshow-bgm-playback/contracts/settings.md
+  D-011's `random` <dependencies> block combines its two `enable` conditions
+  with an explicit <or>: sibling <dependency> elements of the same type are
+  ANDed by Kodi (source-verified, `CSetting::IsEnabled()` in
+  xbmc/settings/lib/Setting.cpp), not ORed, so this wrapper is required or
+  the toggle can never be enabled.
+
+  The `Playlist` branch matches positively on `.m3u`/`.M3U` rather than
+  negating `.pls`/`.xsp`: negating left the toggle wrongly enabled both for
+  `Not Selected` (contains neither) and for any case variant of `.pls`/`.xsp`
+  the negated literals didn't cover (`contains`/`!contains` is
+  case-sensitive with no case-insensitive form, source-verified against
+  `CSettingDependencyCondition::Check()` in
+  xbmc/settings/lib/SettingDependency.cpp). A positive whitelist also fails
+  closed for `Not Selected` and for any future/unknown extension, instead of
+  failing open the way the negated blacklist did.
+
+  The `playlist` setting's control is `format="file"`, not `format="path"`:
+  `format="path"` calls `ShowAndGetDirectory()`, which never applies the
+  <masking> constraint and only lists folders (source-verified,
+  `CGUIControlButtonSetting::GetPath()` in
+  xbmc/settings/windows/GUIControlSettings.cpp). Both found via Tier 2
+  step 3 (quickstart.md) real-Kodi testing; see research.md D-011.
+
+  There is no standalone, always-visible "notice" row in this schema: a
+  `type="string"` setting with `control type="label"` (the generic
+  `CSettingControlLabel` from xbmc/settings/SettingControl.cpp) renders
+  nothing at all in the addon settings dialog -- confirmed on real Kodi, the
+  row is silently dropped. `type="lsep"` is real but is a `settings version`
+  1-only token, converted by the old-format compatibility parser
+  (`CAddonSettings::ParseOldSettingElement` in
+  xbmc/addons/settings/AddonSettings.cpp) into a `CSettingGroup` label; it is
+  not recognized by the `version="2"` deserializer this file uses. The
+  addon settings dialog's only real per-row notice mechanism is a setting's
+  own `help="..."` attribute, shown in the info bar at the bottom of the
+  window while that row has focus -- which is what `playlist`'s `help`
+  string (#30021) carries the Music (Songs) requirement in instead.
+-->
+<settings version="2">
+  <section id="script.slideshow-bgm">
+    <category id="general" label="30009">
+      <group id="1">
+        <setting id="type" type="string" label="30000">
+          <level>0</level>
+          <default>Playlist</default>
+          <constraints>
+            <options>
+              <option label="30001">Playlist</option>
+              <option label="30002">Directory</option>
+            </options>
+          </constraints>
+          <control type="spinner" format="string"/>
+        </setting>
+
+        <setting id="playlist" type="path" label="30003" help="30021">
+          <level>0</level>
+          <default>Not Selected</default>
+          <constraints>
+            <masking>*.m3u|*.pls|*.xsp</masking>
+          </constraints>
+          <control type="button" format="file">
+            <data>
+              <sources>
+                <default>files</default>
+              </sources>
+            </data>
+          </control>
+          <dependencies>
+            <dependency type="visible" setting="type" operator="is">Playlist</dependency>
+          </dependencies>
+        </setting>
+
+        <setting id="directory" type="path" label="30004" help="30022">
+          <level>0</level>
+          <default>Not Selected</default>
+          <constraints>
+            <writable>false</writable>
+          </constraints>
+          <control type="button" format="path">
+            <data>
+              <sources>
+                <default>files</default>
+              </sources>
+            </data>
+          </control>
+          <dependencies>
+            <dependency type="visible" setting="type" operator="is">Directory</dependency>
+          </dependencies>
+        </setting>
+
+        <setting id="random" type="boolean" label="30005" help="30023">
+          <level>0</level>
+          <default>true</default>
+          <control type="toggle"/>
+          <dependencies>
+            <dependency type="enable">
+              <or>
+                <condition operator="is" setting="type">Directory</condition>
+                <and>
+                  <condition operator="is" setting="type">Playlist</condition>
+                  <or>
+                    <condition operator="contains" setting="playlist">.m3u</condition>
+                    <condition operator="contains" setting="playlist">.M3U</condition>
+                  </or>
+                </and>
+              </or>
+            </dependency>
+          </dependencies>
+        </setting>
+
+        <setting id="on_existing_playback" type="string" label="30006" help="30024">
+          <level>0</level>
+          <default>TakeOver</default>
+          <constraints>
+            <options>
+              <option label="30007">TakeOver</option>
+              <option label="30008">Yield</option>
+            </options>
+          </constraints>
+          <control type="spinner" format="string"/>
+        </setting>
+      </group>
+    </category>
+  </section>
 </settings>
