@@ -1,0 +1,90 @@
+# Kodi Media Center language file
+# Addon Name: Slideshow-BGM
+# Addon id: script.slideshow-bgm
+# Addon Provider: dks
+msgid ""
+msgstr ""
+"Project-Id-Version: Slideshow-BGM\n"
+"PO-Revision-Date: 2026-09-16 00:00+0900\n"
+"Last-Translator: dks\n"
+"Language-Team: Korean\n"
+"Language: ko_KR\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+# settings.xml — labels
+msgctxt "#30000"
+msgid "Source type"
+msgstr "소스 유형"
+
+msgctxt "#30001"
+msgid "Playlist"
+msgstr "플레이리스트"
+
+msgctxt "#30002"
+msgid "Directory"
+msgstr "디렉터리"
+
+msgctxt "#30003"
+msgid "Playlist file"
+msgstr "플에이리스트 파일"
+
+msgctxt "#30004"
+msgid "Music directory"
+msgstr "음악 디렉터리"
+
+msgctxt "#30005"
+msgid "Shuffle"
+msgstr "무작위 재생"
+
+msgctxt "#30006"
+msgid "When music is already playing"
+msgstr "음악이 이미 재생 중일 때"
+
+msgctxt "#30007"
+msgid "Stop it and play background music"
+msgstr "재생을 중지하고 배경 음악 재생"
+
+msgctxt "#30008"
+msgid "Leave it alone (keep what's already playing)"
+msgstr "그대로 두기(현재 재생 유지)"
+
+msgctxt "#30009"
+msgid "Background Music"
+msgstr "배경 음악"
+
+# settings.xml — help text
+msgctxt "#30020"
+msgid "Choose whether background music comes from a single playlist file or every audio file in a directory."
+msgstr "배경 음악으로 플레이리스트를 재생할지, 지정한 디렉터리 안의 음악 파일을 재생할지 선택합니다."
+
+msgctxt "#30021"
+msgid "An .m3u, .pls, or .xsp playlist to use as background music.\nA smart playlist (.xsp) must be of the Music (Songs) type."
+msgstr "배경 음악으로 사용할 .m3u, .pls 또는 .xsp 재생목록입니다.\n스마트 재생목록(.xsp)은 반드시 음악(노래) 유형이어야 합니다."
+
+msgctxt "#30022"
+msgid "A directory recursively scanned for supported audio files."
+msgstr "음악 파일을 검색할 디렉터리(하위 디렉토리 포함) 입니다."
+
+msgctxt "#30023"
+msgid "Play background music in random order.\nIgnored for .pls and .xsp playlists, which always use their own order."
+msgstr "배경 음악을 무작위 순서로 재생합니다.\n자체 순서를 사용하는 .pls 및 .xsp 재생목록에는 적용되지 않습니다."
+
+msgctxt "#30024"
+msgid "What to do if Kodi is already playing music when a slideshow starts."
+msgstr "슬라이드쇼가 시작될 때 Kodi에서 이미 음악을 재생 중인 경우의 동작을 선택합니다."
+
+# Addon-facing messages (FR-011, FR-012, FR-015, D-010)
+msgctxt "#32001"
+msgid "Slideshow-BGM integration failed — See kodi.log"
+msgstr "Slideshow-BGM 스킨 연동에 실패했습니다 — kodi.log를 확인하세요"
+
+msgctxt "#32004"
+msgid "Background music is unavailable for this slideshow.\nContinuing without it."
+msgstr "이 슬라이드쇼에서는 배경 음악을 사용할 수 없습니다.\n배경 음악 없이 계속합니다."
+
+msgctxt "#32005"
+msgid "The selected smart playlist is not a Music(Songs) playlist.\nContinuing without background music."
+msgstr "선택한 스마트 재생목록이 음악(노래) 재생목록이 아닙니다.\n배경 음악 없이 계속합니다."

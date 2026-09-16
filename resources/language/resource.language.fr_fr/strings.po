@@ -1,0 +1,90 @@
+# Kodi Media Center language file
+# Addon Name: Slideshow-BGM
+# Addon id: script.slideshow-bgm
+# Addon Provider: dks
+msgid ""
+msgstr ""
+"Project-Id-Version: Slideshow-BGM\n"
+"PO-Revision-Date: 2026-09-16 00:00+0900\n"
+"Last-Translator: dks\n"
+"Language-Team: French\n"
+"Language: fr_FR\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+# settings.xml — labels
+msgctxt "#30000"
+msgid "Source type"
+msgstr "Type de source"
+
+msgctxt "#30001"
+msgid "Playlist"
+msgstr "Liste de lecture"
+
+msgctxt "#30002"
+msgid "Directory"
+msgstr "Dossier"
+
+msgctxt "#30003"
+msgid "Playlist file"
+msgstr "Fichier de liste de lecture"
+
+msgctxt "#30004"
+msgid "Music directory"
+msgstr "Dossier de musique"
+
+msgctxt "#30005"
+msgid "Shuffle"
+msgstr "Lecture aléatoire"
+
+msgctxt "#30006"
+msgid "When music is already playing"
+msgstr "Lorsque de la musique est déjà en cours de lecture"
+
+msgctxt "#30007"
+msgid "Stop it and play background music"
+msgstr "L'arrêter et lire la musique de fond"
+
+msgctxt "#30008"
+msgid "Leave it alone (keep what's already playing)"
+msgstr "La laisser jouer (conserver la lecture en cours)"
+
+msgctxt "#30009"
+msgid "Background Music"
+msgstr "Musique de fond"
+
+# settings.xml — help text
+msgctxt "#30020"
+msgid "Choose whether background music comes from a single playlist file or every audio file in a directory."
+msgstr "Choisissez si la musique de fond provient d'un seul fichier de liste de lecture ou de tous les fichiers audio d'un dossier."
+
+msgctxt "#30021"
+msgid "An .m3u, .pls, or .xsp playlist to use as background music.\nA smart playlist (.xsp) must be of the Music (Songs) type."
+msgstr "Une liste de lecture .m3u, .pls ou .xsp à utiliser comme musique de fond.\nUne liste de lecture intelligente (.xsp) doit être du type Musique (Morceaux)."
+
+msgctxt "#30022"
+msgid "A directory recursively scanned for supported audio files."
+msgstr "Un dossier dans lequel les fichiers audio pris en charge sont recherchés récursivement."
+
+msgctxt "#30023"
+msgid "Play background music in random order.\nIgnored for .pls and .xsp playlists, which always use their own order."
+msgstr "Lit la musique de fond dans un ordre aléatoire.\nCe réglage est ignoré pour les listes de lecture .pls et .xsp, qui utilisent toujours leur propre ordre."
+
+msgctxt "#30024"
+msgid "What to do if Kodi is already playing music when a slideshow starts."
+msgstr "Action à effectuer si Kodi lit déjà de la musique au démarrage d'un diaporama."
+
+# Addon-facing messages (FR-011, FR-012, FR-015, D-010)
+msgctxt "#32001"
+msgid "Slideshow-BGM integration failed — See kodi.log"
+msgstr "Échec de l'intégration de Slideshow-BGM — Consultez kodi.log"
+
+msgctxt "#32004"
+msgid "Background music is unavailable for this slideshow.\nContinuing without it."
+msgstr "La musique de fond n'est pas disponible pour ce diaporama.\nPoursuite sans musique de fond."
+
+msgctxt "#32005"
+msgid "The selected smart playlist is not a Music(Songs) playlist.\nContinuing without background music."
+msgstr "La liste de lecture intelligente sélectionnée n'est pas une liste de type Musique (Morceaux).\nPoursuite sans musique de fond."
