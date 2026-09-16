@@ -1,0 +1,65 @@
+name: Feature request
+description: Suggest an improvement or a new capability for Slideshow-BGM
+title: "[Feature]: "
+labels:
+  - enhancement
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for helping improve Slideshow-BGM. Please describe the need behind
+        your request so we can evaluate how it fits Kodi's slideshow behavior.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or use case
+      description: What problem would this feature solve, and when do you encounter it?
+      placeholder: Describe the situation, who it affects, and what is difficult today.
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed solution
+      description: Describe how you would like Slideshow-BGM to behave.
+      placeholder: Explain the desired behavior from the user's point of view.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Share any workarounds or alternative approaches you have tried.
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      description: Which part of the add-on does this request primarily concern?
+      options:
+        - Background music playback
+        - Video clip transitions
+        - Music source configuration
+        - Skin integration
+        - Logging and diagnostics
+        - Documentation or translations
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
+      description: Add screenshots, logs, examples, or other details that may help.
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checklist
+      options:
+        - label: I searched the existing issues and did not find a duplicate request.
+          required: true

@@ -1,0 +1,136 @@
+name: Bug report
+description: Report something that went wrong on a real device
+title: "[Bug]: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for helping improve Slideshow-BGM. Debugging this add-on is
+        log-driven, so please complete every applicable field and attach the
+        requested log output.
+
+  - type: input
+    id: kodi-version
+    attributes:
+      label: Kodi version
+      placeholder: For example, 21.2
+    validations:
+      required: true
+
+  - type: input
+    id: platform
+    attributes:
+      label: Platform
+      description: Include the operating system and device model where applicable.
+      placeholder: For example, LibreELEC 12 on Raspberry Pi 5
+    validations:
+      required: true
+
+  - type: input
+    id: skin
+    attributes:
+      label: Skin
+      placeholder: For example, Estuary
+    validations:
+      required: true
+
+  - type: input
+    id: addon-version
+    attributes:
+      label: Slideshow-BGM version
+      description: 'Find this in the add-on''s "session start: version=..." log line.'
+      placeholder: For example, 1.0.0
+    validations:
+      required: true
+
+  - type: dropdown
+    id: source-kind
+    attributes:
+      label: Music source kind
+      options:
+        - Playlist
+        - Directory
+    validations:
+      required: true
+
+  - type: dropdown
+    id: playlist-format
+    attributes:
+      label: Playlist format
+      description: Select "Not applicable" when the source kind is Directory.
+      options:
+        - Not applicable
+        - .m3u
+        - .pls
+        - .xsp
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to reproduce
+      description: Tell us how to make the problem happen reliably.
+      placeholder: |
+        1. Start a slideshow containing ...
+        2. Wait until ...
+        3. Observe ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: What did you expect to happen?
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      description: What happened instead?
+    validations:
+      required: true
+
+  - type: dropdown
+    id: first-clip
+    attributes:
+      label: Was this the first video clip of the slideshow session?
+      description: The first clip can incur a one-time video renderer cold-start cost.
+      options:
+        - Not applicable; the issue does not involve a video clip
+        - "Yes"
+        - "No"
+    validations:
+      required: true
+
+  - type: textarea
+    id: log
+    attributes:
+      label: Log output
+      description: |
+        Enable debug logging under Settings > System > Logging, reproduce the
+        issue, then paste the lines containing [slideshow-BGM] from kodi.log.
+        Include nearby Kodi log lines when they help explain the problem.
+      placeholder: Paste log output here
+      render: shell
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
+      description: Add screenshots or any other details that may help.
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checklist
+      options:
+        - label: I searched the existing issues and did not find a duplicate report.
+          required: true
