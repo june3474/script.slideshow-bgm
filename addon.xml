@@ -26,5 +26,9 @@
     <description lang="en_gb">Plays background music for the duration of a Kodi slideshow. Music pauses automatically when a video clip in the slideshow plays and resumes at the following track once the clip ends, until the slideshow itself exits.</description>
     <platform>all</platform>
     <license>MIT</license>
+    <source>https://github.com/june3474/script.slideshow-bgm</source>
+    <assets>
+        <icon>icon.png</icon>
+    </assets>
   </extension>
 </addon>

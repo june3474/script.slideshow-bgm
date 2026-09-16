@@ -112,7 +112,7 @@ dmypy.json
 .pyre/
 
 # CLAUDE
-#CLAUDE.md
+CLAUDE.md
 .claude/
 .specify/
 
