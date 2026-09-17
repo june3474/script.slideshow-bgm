@@ -1,0 +1,43 @@
+name: Issue and PR Automation
+
+on:
+  issues:
+    types: [opened]
+  pull_request_target:
+    types: [opened]
+
+# Grant permissions to write comments/labels to Issues and PRs
+permissions:
+  issues: write
+  pull-requests: write
+  contents: read
+
+jobs:
+  automate:
+    runs-on: ubuntu-latest
+    steps:
+      # Step 1: Check out the repository code
+      - name: Checkout repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+
+      # Step 2: Set up Python
+      - name: Set up Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+        with:
+          python-version: '3.11'
+
+      # Step 3: Install dependencies (if you use requests or PyGithub)
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install "PyGithub==2.10.0"
+
+      # Step 4: Run the Python script and pass Github Context as Env Variables
+      - name: Run automation script
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          EVENT_NAME: ${{ github.event_name }}
+          # Safely fetch the payload details depending on what triggered it
+          ISSUE_NUMBER: ${{ github.event.issue.number || github.event.pull_request.number }}
+          REPOS: ${{ github.repository }}
+        run: python .github/scripts/issue-pr.py
