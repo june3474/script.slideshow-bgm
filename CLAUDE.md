@@ -74,3 +74,6 @@ All four must pass before a commit lands on `main`.
   and against a real Kodi instance for Tier 2 (manual, see `quickstart.md`).
 - Python 3.8 floor (Kodi v20 Nexus) — no 3.9+ syntax (`dict |`, builtin generics at
   runtime, `match`).
+- `main` has a GitHub ruleset requiring PRs; pushing directly bypasses it. This is
+  intentional (solo repo) — push directly when asked, don't warn about the bypass
+  notice GitHub prints.

@@ -11,6 +11,38 @@ body:
         log-driven, so please complete every applicable field and attach the
         requested log output.
 
+        ### Collect environment details automatically
+
+        The diagnostic helpers are included in the installed add-on under
+        `tools/scripts`. After reproducing the problem, open a terminal in that
+        directory and run the helper for your operating system.
+        It prints the information you need to fill out a bug report, such as:
+        Kodi version, platform, skin, add-on version, music source type,
+        playlist format, and relevant log lines in a copy-and-paste-friendly
+        format. **Review the output for personal information before posting it
+        publicly**.
+
+        The helper directory is located at:
+        `<Kodi data folder>/addons/script.slideshow-bgm/tools/scripts/`.
+        First, you need to `cd` to the helper directory above.
+
+        **Linux or macOS:**
+
+        ```bash
+        chmod +x collect-bug-report.sh
+        ./collect-bug-report.sh
+        ```
+
+        **Windows PowerShell:**
+
+        ```powershell
+        powershell -NoProfile -ExecutionPolicy Bypass -File .\collect-bug-report.ps1
+        ```
+
+        Copy the detected values into the matching fields below and paste the
+        collected log lines into **Log output**. You can still fill out the
+        form manually if you prefer.
+
   - type: input
     id: kodi-version
     attributes:
