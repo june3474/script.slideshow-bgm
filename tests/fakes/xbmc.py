@@ -191,8 +191,10 @@ def executebuiltin(function: str) -> None:
     (``world.volume_calls`` / ``world.play_media_calls``) because fader.py
     and player.py tests need to assert on percentages, the OSD-suppression
     argument (D-013), and the resume ``playoffset`` (D-004) without
-    re-parsing strings themselves. Everything else (``PlayerControl(...)``)
-    is only recorded verbatim in ``world.builtins``.
+    re-parsing strings themselves. ``Action(Play)`` models Kodi's
+    ``ACTION_PLAYER_PLAY`` clearing ``GUIWindowSlideShow::m_bPause``
+    (source-verified 2026-09-17, see research.md); everything else
+    (``PlayerControl(...)``) is only recorded verbatim in ``world.builtins``.
     """
     world.builtins.append(function)
     set_volume_match = _SET_VOLUME_RE.match(function)
@@ -202,6 +204,9 @@ def executebuiltin(function: str) -> None:
     play_media_match = _PLAY_MEDIA_RE.match(function)
     if play_media_match:
         _apply_play_media(*play_media_match.groups())
+        return
+    if function == "Action(Play)":
+        world.conditions["Slideshow.IsPaused"] = False
 
 
 def executeJSONRPC(request: str) -> str:

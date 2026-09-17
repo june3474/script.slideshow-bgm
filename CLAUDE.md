@@ -27,7 +27,7 @@ When a real-device issue comes in, start here instead of re-deriving root cause:
 
 | Symptom | See |
 |---|---|
-| Playback / resume behavior wrong | D-004, D-006, R-8 |
+| Playback / resume behavior wrong | D-004, D-006, D-014, R-8 |
 | Settings UI (grey-out, validation, notices) | D-011 |
 | Volume / fades | D-003, D-012, D-013 |
 | Skin integration / launch not firing | D-007 |

@@ -58,6 +58,7 @@ WAIT_INTERVAL_SECONDS = 0.5
 FADE_JOIN_TIMEOUT_SECONDS = 2.0
 
 SLIDESHOW_ACTIVE_CONDITION = "Slideshow.IsActive"
+SLIDESHOW_PAUSED_CONDITION = "Slideshow.IsPaused"
 
 REASON_SLIDESHOW_CLOSED = "slideshow_closed"
 REASON_ABORT_REQUESTED = "abort_requested"
@@ -141,6 +142,18 @@ class SlideshowSession:
             this window closing, so callers must poll it.
         """
         return bool(xbmc.getCondVisibility(SLIDESHOW_ACTIVE_CONDITION))
+
+    def is_slideshow_paused(self) -> bool:
+        """Whether Kodi's own slideshow window is paused, apart from BGM.
+
+        Returns:
+            True while ``Slideshow.IsPaused`` holds. A forcibly-skipped video
+            clip leaves this set with nothing else in Kodi to clear it
+            (``GUIWindowSlideShow``'s ``GUI_MSG_PLAYBACK_STOPPED`` handler sets
+            it and stops there, unlike ``_ENDED``, which clears it itself) --
+            source-verified 2026-09-17, see research.md.
+        """
+        return bool(xbmc.getCondVisibility(SLIDESHOW_PAUSED_CONDITION))
 
     def run(self) -> None:
         """Own the whole lifecycle: start, wait loop, teardown.
@@ -295,11 +308,19 @@ class SlideshowSession:
         FR-004 outranks FR-003 where they collide: a clip ending at the
         instant the slideshow exits must not put music back, so the resume is
         skipped entirely rather than started and torn down.
+
+        A forcibly-skipped clip (as opposed to one left to end naturally)
+        leaves Kodi's own slideshow paused with nothing else to unpause it
+        (``is_slideshow_paused``), so that is cleared here too -- otherwise
+        the picture the user skipped to is the last one the slideshow ever
+        shows, even though BGM resumes normally.
         """
         if self.state is not SessionState.SUSPENDED or self.player is None:
             return
         if self._has_exited():
             return
+        if self.is_slideshow_paused():
+            xbmc.executebuiltin("Action(Play)")
         self.state = SessionState.PLAYING
         resumed = self.position
         self.player.resume_at(resumed)
