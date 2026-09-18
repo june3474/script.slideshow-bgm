@@ -142,7 +142,8 @@ class BgmPlayer(xbmc.Player):
   `track_count` (real Kodi clamps an out-of-range `playoffset` to the last track rather
   than wrapping it itself — T041 finding, research.md D-006's addendum). Falls back to
   the unwrapped `track_index + 1` when `track_count` is unknown (`0`). An invalid index
-  falls back to `playoffset=0`.
+  falls back to `playoffset=1` (track 1 under `playoffset`'s own 1-indexed convention —
+  research.md D-006's 2026-09-18 addendum).
 - Callbacks fire for the **slideshow's own video clips** too. Every handler must first
   establish whether the event concerns BGM or a slide, via `Slideshow.IsVideo`.
 

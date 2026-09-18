@@ -388,6 +388,40 @@ made worse by not wrapping in that corner case. `.pls` and directory sources use
 identical `.m3u`-shaped playlist mechanism, so this fix covers them uniformly, per D-004.
 `.xsp` is a separate, still-open issue — see the T041 addendum below.
 
+**Addendum (2026-09-18, source-read, not yet cross-checked on a running Kodi)**: `playoffset`
+and Kodi's internal playlist index are two separate, differently-based systems, and
+`PlayerBuiltins.cpp`'s `atoi(...) - 1` (quoted above) is the exact point that converts one to
+the other — the *external* `playoffset` argument is 1-indexed, but the *internal* `CPlayList`
+array it is converted into is 0-indexed. This exposed a latent issue in `player.py`'s
+`PLAYLIST_START_OFFSET` (used by `resume_at()` when no track index was ever recorded, D-004),
+which was `0` at the time: under the 1-indexed external contract, `0` is not a valid track
+reference at all — `atoi("0") - 1` underflows to an internal index of `-1`. It happened to
+still resolve to track 1, only because `CPlayListPlayer::Play(int iSong, ...)`
+(`xbmc/PlayListPlayer.cpp`) clamps `iSong` on both ends, not just the high end T041 already
+exercised on real hardware:
+
+```cpp
+if (iSong < 0)
+  iSong = 0;
+if (iSong >= playlist.size())
+  iSong = playlist.size() - 1;
+```
+
+This low-end half of the clamp is symmetric to the high-end clamp the T041 probe confirmed on
+real hardware, but has only ever been confirmed by reading Kodi's source (`Nexus` branch), never
+independently exercised on a running Kodi the way the high-end wrap case was. Same confidence
+standard as the 1-indexed parsing fact above (source read), so treated as **API fact**, but a
+Tier 2 real-device check of this specific clamp would upgrade it further.
+
+**Fix (2026-09-18)**: `PLAYLIST_START_OFFSET` is now `1` — track 1 under `playoffset`'s own
+1-indexed contract, and no longer a value that needs the low-end clamp above to behave
+correctly. The clamp fact itself is kept here rather than dropped: it is still confirmed Kodi
+behavior, it is what made the old `0` work by accident, and it remains relevant background for
+anyone touching `playoffset` arithmetic in this module again. `data-model.md`, `quickstart.md`,
+`tasks.md` T030 and `contracts/modules.md` were updated to match, and
+`tests/unit/test_player.py` / `tests/integration/test_story2_video_clips.py` now assert
+`playoffset=1` for the fallback path.
+
 ---
 
 ## D-007: Launch mechanism — a skin `SlideShow.xml` hook, installed once at login

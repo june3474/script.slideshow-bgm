@@ -252,8 +252,12 @@ confirm BGM pauses on clip start and resumes on clip end, independent of US3.
 
 - [x] T030 [US2] `player.py`: shared `onPlayBackStopped`/`onPlayBackEnded` handler
   gated on `Slideshow.IsVideo`; `resume_at()` targeting `track_index + 1`, falling back
-  to `playoffset=0` when `is_valid` is `False` (FR-002, FR-003, D-001, D-004) (depends
-  on T029, T024). The handler reports plain "clip started"/"clip ended" events via two
+  to `playoffset=1` when `is_valid` is `False` (FR-002, FR-003, D-001, D-004) (depends
+  on T029, T024). **Corrected 2026-09-18**: this originally used `playoffset=0`, chosen
+  before `playoffset`'s 1-indexed convention was confirmed (T041); `0` happened to still
+  land on track 1 via a Kodi-internal clamp, but `1` is the value actually valid under
+  `playoffset`'s own contract (research.md D-006's 2026-09-18 addendum). The handler
+  reports plain "clip started"/"clip ended" events via two
   `Callable[[], None]` constructor params rather than importing `session.py` (would
   close the dependency-graph cycle) — confirmed by grep, no `session` import in
   `player.py`. `onAVStarted` also gained a `Slideshow.IsVideo` guard: it fires for the

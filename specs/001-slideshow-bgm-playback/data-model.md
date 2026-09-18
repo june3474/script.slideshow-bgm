@@ -149,7 +149,9 @@ leaves `track_count` at `0` (research.md D-006's addendum).
    that would exceed `track_count` (real Kodi clamps an out-of-range `playoffset` to the
    last track rather than wrapping it itself — T041 finding, research.md D-006's
    addendum — so the addon computes the wrap). When `is_valid` is `False`, use
-   `playoffset=0` and restart the playlist rather than guessing. When `track_count` is
+   `playoffset=1` and restart the playlist rather than guessing (`1` is track 1 under
+   `playoffset`'s own 1-indexed convention — see research.md D-006's 2026-09-18
+   addendum). When `track_count` is
    unknown (`0`), falls back to the unwrapped `track_index + 1` — no regression versus
    before this fix existed.
 2. Fade in (D-003).

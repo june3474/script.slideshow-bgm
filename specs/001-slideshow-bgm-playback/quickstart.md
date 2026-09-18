@@ -99,7 +99,7 @@ pytest tests/integration/test_story3_configuration.py -v # US3 - P3
 | Video clip ends, next slide is an image | `PlayMedia` with `playoffset == frozen_index + 1`, fade in | FR-003, SC-002 |
 | Two clips back to back | Stays `SUSPENDED` across both; exactly one suspend, one resume | US2 sc. 3, Edge Case 4 |
 | Clip interrupts track N, any source | Resumes at the **beginning of track N+1** — same assertion for `.m3u`, `.pls`, `.xsp` and directory | FR-003, D-004 |
-| `Playlist.Position(music)` returns `''` | `is_valid` `False`; resume falls back to `playoffset=0`, no crash | D-005 |
+| `Playlist.Position(music)` returns `''` | `is_valid` `False`; resume falls back to `playoffset=1`, no crash | D-005 |
 | Directory source | All seven FR-006 extensions collected; non-ASCII name survives | SC-005, D-009 |
 | A track added to the directory since the last run | Appears on the next slideshow — every derived source is re-resolved each start | SC-005, D-009 addendum |
 | Resolved list identical to the cached `bgm.m3u` | File not rewritten; mtime unchanged | D-009 addendum |

@@ -337,7 +337,7 @@ def test_an_unreadable_track_count_falls_back_to_the_non_wrapping_offset() -> No
 
 
 def test_an_unknown_position_resumes_from_the_playlist_start() -> None:
-    assert resume_offset(UNKNOWN_POSITION) == 0
+    assert resume_offset(UNKNOWN_POSITION) == 1
 
 
 def test_resume_at_replays_the_playlist_start_gave_it() -> None:
@@ -355,7 +355,7 @@ def test_resume_at_falls_back_to_the_playlist_start_when_asked_for_nothing() -> 
 
     player.resume_at(UNKNOWN_POSITION)
 
-    assert world.play_media_calls[-1] == {"path": PLAYLIST, "playoffset": 0}
+    assert world.play_media_calls[-1] == {"path": PLAYLIST, "playoffset": 1}
 
 
 def test_resume_at_warns_when_it_falls_back_to_the_playlist_start() -> None:

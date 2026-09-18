@@ -45,8 +45,19 @@ PLAYLIST_LENGTH_INFOLABEL = "Playlist.Length(music)"
 SLIDESHOW_IS_VIDEO_CONDITION = "Slideshow.IsVideo"
 
 #: ``playoffset`` used when no usable track index was ever recorded: restart
-#: the playlist rather than guess at a resume point (D-004, data-model.md).
-PLAYLIST_START_OFFSET = 0
+#: the playlist rather than guess at a resume point (D-004, data-model.md). ``1``
+#: is track 1 under ``playoffset``'s own 1-indexed convention (D-006, T041) --
+#: not the ``0`` an earlier draft of this addon used, before that convention was
+#: confirmed.
+#:
+#: ``playoffset`` is 1-indexed on the way into ``PlayMedia``, but Kodi's internal
+#: playlist array is 0-indexed; ``atoi(...) - 1`` (``PlayerBuiltins.cpp``) is the
+#: conversion point, and a negative result there is clamped to ``0`` by Kodi's own
+#: playlist player (source-confirmed, D-006 addendum 2026-09-18; not yet
+#: cross-checked against a running Kodi). That clamp is what made the old ``0``
+#: value work, by accident -- ``1`` needs no clamp, since it is a valid track
+#: reference under ``playoffset``'s own contract.
+PLAYLIST_START_OFFSET = 1
 
 
 class BgmPosition(NamedTuple):

@@ -451,7 +451,7 @@ def test_a_clip_before_any_track_index_was_read_resumes_from_the_start(
 
     _run(monkeypatch, [_clip_starts, _clip_ends_on_an_image], track=None)
 
-    assert _resume_calls() == [0]
+    assert _resume_calls() == [1]
 
 
 def test_resuming_from_the_playlist_start_says_so_in_the_log(
