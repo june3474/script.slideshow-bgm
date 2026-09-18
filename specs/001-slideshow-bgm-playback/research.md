@@ -974,6 +974,62 @@ dependency operators.
 
 ---
 
+## D-014: Resuming BGM after a skipped clip must also unpause Kodi's own slideshow
+
+**Decision** (Tier 2 bug report, 2026-09-17): `_on_clip_end` calls
+`xbmc.executebuiltin("Action(Play)")` before resuming BGM whenever
+`is_slideshow_paused()` (`Slideshow.IsPaused`) reads true.
+
+**Symptom reported**: forcibly skipping a video clip (arrow key) during a slideshow
+leaves BGM resuming normally, but the slideshow itself frozen on the next picture —
+it never advances again. Letting the clip end naturally has no such problem.
+
+**Root cause, verified against `xbmc/xbmc` master source
+(`xbmc/pictures/GUIWindowSlideShow.cpp`)**, not guesswork:
+
+- `OnMessage`'s `GUI_MSG_PLAYBACK_ENDED` case (natural end) clears `m_bPause` itself and
+  advances `m_iCurrentSlide` in the same handler.
+- `OnMessage`'s `GUI_MSG_PLAYBACK_STOPPED` case (any stop before natural end, which is
+  what a forced skip produces — D-001's shared-callback finding) sets `m_bPause = true`
+  and does nothing else. The one picture the user's keypress forces through still
+  displays (driven independently by `m_bLoadNextPic` in `Process()`), but every
+  *automatic* advance after that is gated on `!m_bPause` (line ~444:
+  `bSlideShow = m_bSlideShow && !m_bPause && !m_bPlayingVideo`), which now never clears —
+  matching D-002's already-recorded caveat that `Slideshow.IsPaused` is not an
+  exclusively user-driven signal.
+- Nothing else in Kodi's C++ clears `m_bPause` after a stop. `OnAction`'s shared
+  `case ACTION_PAUSE: case ACTION_PLAYER_PLAY:` block is the only other write path: when
+  the current slide is not a video and the slideshow is paused or inactive
+  (`!m_bSlideShow || m_bPause`), *either* action resumes it (`m_bSlideShow = true;
+  m_bPause = false;`); only `ACTION_PAUSE` can ever set it back to true.
+  `xbmc.executebuiltin("Action(Play)")` maps to `ACTION_PLAYER_PLAY`
+  (`xbmc/input/actions/ActionTranslator.cpp`, `{"play", ACTION_PLAYER_PLAY}`), which is
+  therefore **not a toggle**: calling it while the slideshow is already unpaused hits
+  neither of `OnAction`'s pause-related branches and is a no-op. (The real toggle,
+  `ACTION_PLAYER_PLAYPAUSE` / `Action(PlayPause)`, is a different action and is not what
+  this fix calls.)
+
+**Why this is safe even called defensively**: the fix only fires when
+`is_slideshow_paused()` already reads true, and `Action(Play)` cannot pause an
+already-playing slideshow — so a false-positive read (e.g. a natural end observed at the
+exact instant `Slideshow.IsPaused` has not yet been cleared) costs nothing.
+`test_a_natural_clip_end_does_not_misfire_the_unpause_action`
+(tests/integration/test_story2_video_clips.py) is the regression guard for that case.
+
+**Confidence**: High on the mechanism (source-verified against `GUIWindowSlideShow.cpp`
+and `ActionTranslator.cpp`, same standard of evidence as D-013). **Hypothesis, not yet
+Tier-2-confirmed**: the exact interleaving of `m_iCurrentSlide`'s advance (driven by
+`Process()`'s render loop) against this addon's callback dispatch is a timing question
+source-reading cannot fully settle — `OnAction`'s `case ACTION_PAUSE: case
+ACTION_PLAYER_PLAY:` block re-checks `IsVideo(m_slides.at(m_iCurrentSlide))` fresh at
+dispatch time, and if that index somehow still pointed at the just-skipped clip, this
+call would call `PlayVideo()` instead of unpausing. Reasoned unlikely (the slide index
+advance does not wait on the stopped-video's own GUI message, and the builtin is itself
+queued rather than dispatched synchronously), but must be confirmed against a running
+Kodi before this is treated as fully closed — same category of risk as R-6/R-7.
+
+---
+
 ## Probe results (2026-09-13)
 
 T001 ran the scenario in

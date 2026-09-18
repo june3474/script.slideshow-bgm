@@ -189,6 +189,20 @@ def _clip_ends_on_an_image(ended: bool = False) -> None:
         world.fire_stopped()
 
 
+def _clip_is_skipped_to_an_image() -> None:
+    """Kodi stops a forcibly-skipped clip and leaves its slideshow paused.
+
+    GUIWindowSlideShow's GUI_MSG_PLAYBACK_STOPPED handler sets ``m_bPause``
+    true and never clears it -- unlike GUI_MSG_PLAYBACK_ENDED, which clears it
+    itself (source-verified 2026-09-17, see research.md). Nothing else in
+    Kodi unpauses the slideshow after a skip, so it stalls on the next image.
+    """
+    world.conditions["Slideshow.IsVideo"] = False
+    world.conditions["Slideshow.IsPaused"] = True
+    world.end_video_clip()
+    world.fire_stopped()
+
+
 def _clip_ends_as_the_slideshow_closes() -> None:
     """The slideshow window goes away at the very instant a clip ends."""
     world.conditions["Slideshow.IsActive"] = False
@@ -377,6 +391,41 @@ def test_on_playback_ended_resumes_exactly_like_on_playback_stopped(
     _run(monkeypatch, [_clip_starts, lambda: _clip_ends_on_an_image(ended=True)])
 
     assert _resume_calls() == [RESUME_OFFSET]
+
+
+def test_skipping_a_clip_unpauses_the_slideshow(
+    tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # A forced skip leaves GUIWindowSlideShow paused (see
+    # _clip_is_skipped_to_an_image); BGM resuming must also unstick it via
+    # Action(Play), or the slideshow stalls on the next image forever.
+    _configure_playlist(tmp_path)
+
+    _run(monkeypatch, [_clip_starts, _clip_is_skipped_to_an_image])
+
+    assert world.conditions["Slideshow.IsPaused"] is False
+
+
+def test_a_natural_clip_end_does_not_misfire_the_unpause_action(
+    tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # Regression guard for the skip-vs-natural-end asymmetry: even if
+    # Slideshow.IsPaused were still true at the exact instant a clip ends
+    # naturally (GUIWindowSlideShow clears it itself on GUI_MSG_PLAYBACK_ENDED,
+    # but the timing between that and this callback is not a guarantee this
+    # addon controls), issuing Action(Play) must stay harmless -- it is
+    # ACTION_PLAYER_PLAY, never the ACTION_PLAYER_PLAYPAUSE toggle
+    # (source-verified 2026-09-17, see research.md).
+    _configure_playlist(tmp_path)
+
+    def _clip_ends_naturally_but_still_reads_paused() -> None:
+        world.conditions["Slideshow.IsPaused"] = True
+        _clip_ends_on_an_image()
+
+    _run(monkeypatch, [_clip_starts, _clip_ends_naturally_but_still_reads_paused])
+
+    assert _resume_calls() == [RESUME_OFFSET]
+    assert world.conditions["Slideshow.IsPaused"] is False
 
 
 def test_a_single_track_playlist_resumes_into_itself(
