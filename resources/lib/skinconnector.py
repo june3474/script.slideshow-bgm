@@ -19,10 +19,11 @@ Parsing keeps XML comments (``insert_comments``) so a skin author's own file is
 handed back with everything but the hook unchanged.
 """
 
+import enum
 import os
 import re
 import xml.etree.ElementTree as ElementTree
-from typing import List, Optional, Tuple
+from typing import List, NamedTuple, Optional, Tuple
 
 import xbmc
 import xbmcvfs
@@ -130,6 +131,91 @@ def is_hooked(path: str) -> bool:
     return root is not None and _find_hook(root) is not None
 
 
+class SlideshowFileState(enum.Enum):
+    """What one of the skin's slideshow files needs (specs/002 data-model.md)."""
+
+    INTEGRATED = "integrated"
+    NEEDS_INTEGRATION = "needs_integration"
+    NOT_MODIFIABLE = "not_modifiable"
+
+
+class _Inspected(NamedTuple):
+    """A slideshow file that passed every precondition, read exactly once."""
+
+    content: str
+    root: ElementTree.Element
+
+
+def _inspect(path: str) -> Optional[_Inspected]:
+    """Run the preconditions and parse the file, without modifying it.
+
+    The one inspection :func:`assess` and :func:`install` share, so the
+    question the user is asked and the install that follows it cannot
+    disagree about what a file is (specs/002 D-017). Checks run in the order
+    fixed by contracts/skin-integration.md -- found, readable, writable,
+    parseable -- and the first failure stops and is logged with its reason and
+    remedy (FR-015).
+
+    Args:
+        path: SlideShow.xml to inspect.
+
+    Returns:
+        The file's content and parsed root, or None when it cannot be
+        modified.
+    """
+    if not _preconditions_ok(path):
+        return None
+    content = _read(path)
+    if content is None:
+        _log_failure(path, _REASON_NOT_READABLE, _REMEDY_NOT_READABLE)
+        return None
+    root = _parse_content(content)
+    if root is None:
+        _log_failure(path, _REASON_UNPARSEABLE, _REMEDY_UNPARSEABLE)
+        return None
+    return _Inspected(content, root)
+
+
+def _hook_present(root: ElementTree.Element, path: str) -> bool:
+    """Whether the hook is already in the file, logging it when it is.
+
+    Args:
+        root: Parsed root ``<window>`` element.
+        path: The file ``root`` came from, for the log line.
+
+    Returns:
+        True when the addon's ``<onload>`` is present, whatever its condition.
+    """
+    if _find_hook(root) is None:
+        return False
+    messages.log("skin hook: already present ({0})".format(path), xbmc.LOGDEBUG)
+    return True
+
+
+def assess(path: str) -> SlideshowFileState:
+    """Classify a slideshow file without modifying it.
+
+    Lets the caller ask the user before :func:`install` writes anything
+    (specs/002 FR-001). Failures are logged exactly as :func:`install` logs
+    them, because both go through :func:`_inspect`. The writability probe is
+    the same empty append and transient probe file :func:`install` already
+    performs; the skin file's content is never changed (research.md R-11).
+
+    Args:
+        path: SlideShow.xml to assess.
+
+    Returns:
+        ``NOT_MODIFIABLE`` when a precondition failed, ``INTEGRATED`` when the
+        addon's hook is already present, otherwise ``NEEDS_INTEGRATION``.
+    """
+    inspected = _inspect(path)
+    if inspected is None:
+        return SlideshowFileState.NOT_MODIFIABLE
+    if _hook_present(inspected.root, path):
+        return SlideshowFileState.INTEGRATED
+    return SlideshowFileState.NEEDS_INTEGRATION
+
+
 def install(path: str) -> bool:
     """Inject the addon's ``<onload>`` as the last child of ``<window>``.
 
@@ -137,7 +223,9 @@ def install(path: str) -> bool:
     contracts/skin-integration.md -- found, readable, writable, parseable --
     and the first failure aborts without writing anything, logging its reason
     and a remedy (FR-015). Already-hooked files are left exactly as they are,
-    so repeated calls never accumulate duplicates.
+    so repeated calls never accumulate duplicates. Whether the user has agreed
+    to the change is the caller's business (specs/002); this always re-inspects
+    the file, so a change made since :func:`assess` is caught here.
 
     Args:
         path: SlideShow.xml to hook.
@@ -145,20 +233,13 @@ def install(path: str) -> bool:
     Returns:
         True when the file is hooked, including when it already was.
     """
-    if not _preconditions_ok(path):
+    inspected = _inspect(path)
+    if inspected is None:
         return False
-    content = _read(path)
-    if content is None:
-        _log_failure(path, _REASON_NOT_READABLE, _REMEDY_NOT_READABLE)
-        return False
-    root = _parse_content(content)
-    if root is None:
-        _log_failure(path, _REASON_UNPARSEABLE, _REMEDY_UNPARSEABLE)
-        return False
-    if _find_hook(root) is not None:
-        messages.log("skin hook: already present ({0})".format(path), xbmc.LOGDEBUG)
+    root = inspected.root
+    if _hook_present(root, path):
         return True
-    declaration, trailing_newline = _declaration_and_trailing_newline(content)
+    declaration, trailing_newline = _declaration_and_trailing_newline(inspected.content)
     if not _back_up(path):
         _log_failure(path, _REASON_NOT_WRITABLE, _REMEDY_NOT_WRITABLE)
         return False

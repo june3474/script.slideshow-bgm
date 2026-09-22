@@ -242,9 +242,14 @@ def find_slideshow_xml() -> List[str]: ...
 def is_hooked(path: str) -> bool: ...
 def install(path: str) -> bool: ...
 def uninstall(path: str) -> bool: ...
+
+# added 2026-09-21 (specs/002-skin-hook-consent)
+class SlideshowFileState(enum.Enum):  # INTEGRATED | NEEDS_INTEGRATION | NOT_MODIFIABLE
+def assess(path: str) -> SlideshowFileState: ...   # read-only; shares install()'s checks
 ```
 
-Full semantics in [skin-integration.md](./skin-integration.md).
+Full semantics in [skin-integration.md](./skin-integration.md) and, for `assess`,
+[specs/002's consent-dialog.md](../../002-skin-hook-consent/contracts/consent-dialog.md).
 
 ## `resources/lib/messages.py` — FR-009, FR-012, D-010
 
@@ -256,16 +261,22 @@ def notify(message: str, icon: str = xbmcgui.NOTIFICATION_INFO) -> None:
     """Non-blocking toast (FR-012). Heading is always addon_name ("Slideshow-BGM").
     icon (added 2026-09-15) lets a specific failure (e.g. Reason.NOT_MUSIC_PLAYLIST)
     read as an error rather than the routine default."""
+
+def confirm(heading: str, message: str) -> bool:
+    """Blocking Yes/No (added 2026-09-21, specs/002 D-015). True only for Yes; No, Back
+    and Esc are False. Passes no autoclose, so it waits for a person (FR-009)."""
 ```
 
 **Contract**: every user-visible string is looked up from `strings.po` by id. No
 hardcoded literals. Line format is fixed by [logging.md](./logging.md).
 
-There is deliberately no blocking-dialog wrapper. `ok()` and `yesno()` existed for
-FR-011's settings-time prompt and were removed 2026-09-15 along with their only caller,
-`config.prompt_until_valid` — Script Mode reaches no moment at which a blocking dialog
-could be raised, so every surface this addon has is non-blocking (research.md D-010's
-addendum).
+There is exactly one blocking-dialog wrapper, `confirm()`, and it exists for one question:
+the user's consent before the skin is modified (specs/002 D-015). `ok()` and `yesno()`
+had existed for FR-011's settings-time prompt and were removed 2026-09-15 along with their
+only caller, `config.prompt_until_valid` — Script Mode reaches no moment at which a
+blocking dialog could be raised (research.md D-010's addendum). The login-time service
+*is* running at profile load and can wait for an answer, which is the only reason
+`confirm()` is reachable. Every other surface stays non-blocking.
 
 ## Entry points
 
@@ -276,10 +287,12 @@ def main() -> None:
 
 # service.py - xbmc.service; runs once at profile login, then exits
 def main() -> None:
-    """Install the skin hook and return. Holds nothing (principle 2.2).
+    """Assess the skin's slideshow files, ask once if any needs the hook, install on Yes,
+    and return. Holds nothing (principle 2.2) -- the dialog is a synchronous call.
 
     On failure, shows one non-blocking notification for the run (FR-015) --
     skinconnector already logged the specific reason and remedy per file attempted.
+    The consent question is specs/002's and is the one blocking dialog.
     """
 ```
 
@@ -294,7 +307,7 @@ addon.py ──> session ──> player ──> fader
                 └─────> messages
 
 service.py ──> skinconnector ──> messages
-service.py ──> messages   (direct: the FR-015 failure notification)
+service.py ──> messages   (direct: the consent dialog and the FR-015 failure notification)
 ```
 
 Acyclic and one-directional. `messages` is the only module every other one may import;

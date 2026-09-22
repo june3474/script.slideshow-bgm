@@ -88,3 +88,13 @@ msgstr "La música de fondo no está disponible para esta presentación.\nSe con
 msgctxt "#32005"
 msgid "The selected smart playlist is not a Music(Songs) playlist.\nContinuing without background music."
 msgstr "La lista de reproducción inteligente seleccionada no es de tipo Música (Canciones).\nSe continuará sin música de fondo."
+
+# Skin integration consent dialog (specs/002-skin-hook-consent, FR-002).
+# The body sends the user to README.md's "2. Skin integration" for the exact code.
+msgctxt "#32006"
+msgid "Slideshow-BGM needs your permission"
+msgstr "Slideshow-BGM necesita tu permiso"
+
+msgctxt "#32007"
+msgid "Slideshow-BGM must add integration code to the current skin's SlideShow.xml so that it can run automatically when a slideshow starts. For details, see \"2. Skin integration\" in README.md.\nIf you choose No, nothing changes and the addon stays inactive. However, you will be asked again at the next start or login. To stop being asked, disable or uninstall the addon."
+msgstr "Slideshow-BGM debe añadir código de integración al archivo SlideShow.xml de la apariencia (skin) actual para poder ejecutarse automáticamente cuando comienza una presentación. Para más información, consulta la sección \"2. Skin integration\" del archivo README.md.\nSi eliges No, no se cambia nada y el complemento queda inactivo.\nSin embargo, se te volverá a preguntar en el próximo inicio o al iniciar sesión. Para no volver a ver esta pregunta, desactiva o desinstala el complemento."

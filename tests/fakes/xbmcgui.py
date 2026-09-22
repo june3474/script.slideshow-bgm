@@ -4,11 +4,18 @@ Only ``Dialog`` is modeled -- the surface ``resources/lib/messages.py``
 (D-010) actually calls. Every call is recorded so tests can assert on the
 blocking-vs-non-blocking split FR-011/FR-012 require without a display.
 """
+
 from typing import List, Tuple
 
 NOTIFICATION_INFO = "info"
 NOTIFICATION_WARNING = "warning"
 NOTIFICATION_ERROR = "error"
+
+#: ``yesno``'s ``defaultbutton`` values. Source-confirmed
+#: (``xbmc/dialogs/GUIDialogBoxBase.h``): ``CONTROL_CHOICES_START = 10``,
+#: ``CONTROL_NO_BUTTON = 10``, ``CONTROL_YES_BUTTON = 11``.
+DLG_YESNO_NO_BTN = 10
+DLG_YESNO_YES_BTN = 11
 
 
 class _DialogCalls:

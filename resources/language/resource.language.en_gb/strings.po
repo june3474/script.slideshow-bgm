@@ -81,3 +81,13 @@ msgstr ""
 msgctxt "#32005"
 msgid "The selected smart playlist is not a Music(Songs) playlist.\nContinuing without background music."
 msgstr ""
+
+# Skin integration consent dialog (specs/002-skin-hook-consent, FR-002).
+# The body sends the user to README.md's "2. Skin integration" for the exact code.
+msgctxt "#32006"
+msgid "Slideshow-BGM needs your permission"
+msgstr ""
+
+msgctxt "#32007"
+msgid "Slideshow-BGM must add integration code to the current skin's SlideShow.xml so that it can run automatically when a slideshow starts. For details, see \"2. Skin integration\" in README.md.\nIf you choose No, nothing changes and the addon stays inactive. However, you will be asked again at the next start or login. To stop being asked, disable or uninstall the addon."
+msgstr ""

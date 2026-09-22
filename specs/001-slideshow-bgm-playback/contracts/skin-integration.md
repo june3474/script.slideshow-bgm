@@ -44,6 +44,7 @@ for the non-ASCII path reason in [research.md D-009](../research.md).
 | `is_hooked(path) -> bool` | True iff an `<onload>` whose text is `RunAddon(script.slideshow-bgm)` exists under the root `<window>` |
 | `install(path) -> bool` | Back up, then insert the element. No-op returning `True` if already hooked |
 | `uninstall(path) -> bool` | Remove only the addon's own `<onload>`; leave every other element untouched |
+| `assess(path) -> SlideshowFileState` | *(added 2026-09-21, [specs/002](../../002-skin-hook-consent/contracts/consent-dialog.md))* Run the same preconditions as `install` and classify the file `INTEGRATED` / `NEEDS_INTEGRATION` / `NOT_MODIFIABLE` without modifying it; logs exactly what `install` would |
 
 ### Preconditions for `install`
 
@@ -60,7 +61,22 @@ specific reason and a suggested remedy, and `service.py` shows one non-blocking
 notification for the run, naming the failure generically and pointing at the log for
 detail. Neither is a blocking dialog — profile login is not a moment to demand
 acknowledgement, but a failure that leaves the user without background music and no
-visible cause is worse than a brief toast.
+visible cause is worse than a brief toast. **[AMENDED 2026-09-21]** This holds for
+*failures*. The one blocking dialog is the consent question asked **before** an install
+— see "Consent before install" below.
+
+### Consent before install (added 2026-09-21, specs/002)
+
+`service.py` no longer installs blind. It first `assess()`es every file — the same
+preconditions, and no write to the skin file — and only if at least one is
+`NEEDS_INTEGRATION` asks the user, once, through a blocking Yes/No dialog whose text says
+what will be added and points to README.md's section "2. Skin integration" for the exact
+code. **Yes** → `install()` for those files, exactly as specified here.
+**No** or Back/Esc → nothing is modified or backed up, the addon stays enabled but inactive
+(nothing launches it), and the question returns at the next profile load. Nothing is
+persisted: the hook's presence is the record. A file that fails a precondition is not part
+of the question and follows the failure path above. Full contract:
+[specs/002 consent-dialog.md](../../002-skin-hook-consent/contracts/consent-dialog.md).
 
 | Failure | Logged reason (example) | Logged remedy |
 |---|---|---|
@@ -92,8 +108,8 @@ re-hooks the addon after the user changes skins (risk R-3).
 
 | Moment | Actor | Action |
 |---|---|---|
-| Profile login / Kodi start | `service.py` (`xbmc.service` extension point) | Resolve active skin, `install()`, **exit immediately** |
-| Skin change by the user | next profile login | Re-`install()` into the new skin |
+| Profile login / Kodi start | `service.py` (`xbmc.service` extension point) | Resolve active skin, `assess()` each file, ask the user once if any needs the hook *(specs/002)*, `install()` the ones that do on Yes, **exit immediately** |
+| Skin change by the user | next profile login | Re-`assess()`; the new skin's files are asked about if they lack the hook |
 | Slideshow window opens | Kodi | Evaluates the condition, runs `RunAddon(script.slideshow-bgm)` |
 | Addon uninstall | Kodi | Hook remains but its condition evaluates false — inert |
 
@@ -105,7 +121,8 @@ that makes it outlive its hookup work breaks the deviation justified in
 ## Known limitation
 
 A skin update can overwrite `SlideShow.xml` and silently drop the hook (risk R-3),
-repaired only at the next profile login. Why this is preferred over watching the file is
+repaired only at the next profile login — and, since 2026-09-21, only if the user agrees
+again, because no answer is remembered (specs/002 FR-007). Why this is preferred over watching the file is
 argued in [research.md](../research.md) D-007. If that repair attempt also fails, the same
 notify-and-log behavior above applies — there is only one failure path, not a separate one
 for first install versus re-install.

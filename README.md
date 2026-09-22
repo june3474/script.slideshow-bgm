@@ -89,8 +89,8 @@ Restart Kodi after installing.
 ## 2. Skin integration
 
 A Kodi script add-on cannot detect slideshow startup by itself. On profile login,
-Slideshow-BGM therefore adds the following hook to every `SlideShow.xml` supplied by
-the active skin:
+Slideshow-BGM therefore asks your permission (see below) and then adds the following
+hook to every `SlideShow.xml` supplied by the active skin:
 
 ```xml
 <onload condition="System.HasAddon(script.slideshow-bgm) + System.AddonIsEnabled(script.slideshow-bgm)">RunAddon(script.slideshow-bgm)</onload>
@@ -98,6 +98,10 @@ the active skin:
 
 This is what keeps the add-on running only while a slideshow is on screen, instead of
 for the whole time Kodi is up.
+
+The `condition` is a guard: it makes the line do nothing unless Slideshow-BGM is both
+installed and enabled. That is why it is harmless in nearly all cases, and why it stays
+inert if you later disable or remove the add-on.
 
 Editing a skin file you didn't write is invasive, and that trade-off was made
 deliberately, not by default. A background service was considered and rejected: Kodi
@@ -111,6 +115,24 @@ and found technically impossible — Kodi's native slideshow window does not dis
 Python callbacks at all.
 
 ![The hook added to a skin's SlideShow.xml](https://raw.githubusercontent.com/june3474/script.slideshow-bgm/gh-pages/img/hookup_after.png)
+
+### Asking for your permission
+
+Because this edits a file you didn't write, Slideshow-BGM asks before it touches
+anything. When the active skin's `SlideShow.xml` doesn't have the hook yet, a Yes/No
+dialog appears at profile login. It says that the add-on needs to add integration code to
+the skin's `SlideShow.xml` so that it can run automatically when a slideshow starts, and
+points to this section, "2. Skin integration", for the exact code and what it does.
+
+- **Yes** — the hook is added, and background music works from the next slideshow.
+- **No** (or Back/Esc) — nothing is changed. The add-on stays installed and enabled but
+  does nothing, because nothing launches it, and the question comes back the next time
+  Kodi starts or you log in.
+
+To stop being asked, disable or uninstall the add-on. You are not asked if the skin
+already has the hook — including one installed by an earlier version of the add-on. You
+are asked again if you switch to a skin that doesn't have it, or a skin update removes
+it: the add-on never remembers an answer.
 
 Before changing a skin file, the add-on creates a sibling backup with the suffix
 `.original`. Repeated startup does not add duplicate hooks. After changing skins,
@@ -204,7 +226,14 @@ root.
 ### A skin update disables the add-on
 
 A skin update may replace its `SlideShow.xml` and remove the hook. Restart Kodi; the
-add-on checks the active skin again at profile login and reinstalls a missing hook.
+add-on checks the active skin again at profile login and, after asking your permission
+again, reinstalls a missing hook.
+
+### The permission dialog keeps appearing
+
+It returns at every Kodi start or login for as long as the skin lacks the hook and the
+add-on is enabled. Answer **Yes** to install the hook, or disable or uninstall
+Slideshow-BGM to stop the question.
 
 ## 6. Uninstallation
 

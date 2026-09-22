@@ -44,6 +44,9 @@ exactly once per occurrence, at `LOGINFO` or above:
 | Track list derived for a directory/`.pls`/`.xsp` source | `LOGDEBUG` | `resolved <count> tracks from <path> in <n.n> ms` |
 | Session end | `LOGINFO` | `session end: reason=<slideshow_closed\|abort_requested> volume restored to <n>` |
 | Track index unreadable | `LOGWARNING` | `Playlist.Position(music) unreadable; resuming from playlist start` |
+| Skin consent requested *(2026-09-21, specs/002)* | `LOGINFO` | `skin hook: consent requested for <n> file(s)` |
+| Skin consent granted *(specs/002)* | `LOGINFO` | `skin hook: consent granted` |
+| Skin consent declined or dismissed *(specs/002)* | `LOGINFO` | `skin hook: consent declined or dismissed — skin left untouched; will ask again at next profile load` |
 | Skin hook installed | `LOGINFO` | `skin hook: installed (<path>)` |
 | Skin hook already present | `LOGDEBUG` | `skin hook: already present (<path>)` |
 | Skin hook install failed | `LOGERROR` | `skin hook: install failed at <path> — <reason>. Fix: <remedy>` |

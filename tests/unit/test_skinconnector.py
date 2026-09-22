@@ -3,7 +3,7 @@
 import os
 import pathlib
 import stat
-from typing import Any, Iterator, List
+from typing import Any, Iterator, List, Tuple
 
 import pytest
 import xbmc
@@ -676,6 +676,151 @@ def test_uninstall_says_so_when_a_failed_write_has_no_backup_to_restore_from(
         path in line and "no" in line and path + ".original" in line
         for line in _errors()
     )
+
+
+# -- assess: classify a file without modifying it (specs/002, D-017) ---------
+
+
+def test_assess_says_a_plain_file_needs_integration(tmp_path: pathlib.Path) -> None:
+    path = _write_xml(tmp_path / "SlideShow.xml")
+
+    state = skinconnector.assess(path)
+
+    assert state is skinconnector.SlideshowFileState.NEEDS_INTEGRATION
+
+
+def test_assess_says_a_hooked_file_is_integrated(tmp_path: pathlib.Path) -> None:
+    path = _write_xml(tmp_path / "SlideShow.xml", HOOKED_XML)
+
+    state = skinconnector.assess(path)
+
+    assert state is skinconnector.SlideshowFileState.INTEGRATED
+
+
+def test_assess_counts_a_hand_edited_condition_as_integrated(
+    tmp_path: pathlib.Path,
+) -> None:
+    path = _write_xml(
+        tmp_path / "SlideShow.xml",
+        '<window><onload condition="Player.HasAudio">'
+        "RunAddon(script.slideshow-bgm)</onload></window>",
+    )
+
+    state = skinconnector.assess(path)
+
+    assert state is skinconnector.SlideshowFileState.INTEGRATED
+
+
+def test_assess_logs_that_an_integrated_file_already_has_the_hook(
+    tmp_path: pathlib.Path,
+) -> None:
+    path = _write_xml(tmp_path / "SlideShow.xml", HOOKED_XML)
+
+    skinconnector.assess(path)
+
+    assert (
+        "[slideshow-BGM] skin hook: already present ({0})".format(path),
+        xbmc.LOGDEBUG,
+    ) in world.log_lines
+
+
+UNMODIFIABLE_KINDS = [
+    "missing",
+    "unreadable",
+    "not valid utf-8",
+    "unwritable file",
+    "unwritable directory",
+    "unparseable",
+    "no window root",
+]
+
+
+def _unmodifiable_file(kind: str, tmp_path: pathlib.Path) -> Tuple[str, str, str]:
+    """Build one way a slideshow file fails the install preconditions.
+
+    Returns the file's path with the reason and remedy that
+    contracts/skin-integration.md names for that failure.
+    """
+    unwritable = (
+        "SlideShow.xml or its directory is not writable: {0}",
+        "grant write permission, e.g. chmod u+w {0} or edit {0} using sudo, "
+        "then restart Kodi",
+    )
+    unparseable = (
+        "SlideShow.xml is not valid XML or has no root <window>: {0}",
+        "the skin file may be corrupted; try reinstalling the skin",
+    )
+    if kind == "missing":
+        path = str(tmp_path / "gone" / "SlideShow.xml")
+        return (
+            path,
+            "no SlideShow.xml found under special://skin for skin {0}".format(
+                SKIN_DIR_NAME
+            ),
+            "this skin may not support slideshow integration; try a different skin",
+        )
+    if kind == "unreadable":
+        path = _write_xml(tmp_path / "SlideShow.xml")
+        os.chmod(path, 0o000)
+    elif kind == "not valid utf-8":
+        path = str(tmp_path / "SlideShow.xml")
+        (tmp_path / "SlideShow.xml").write_bytes(b"<window>\xff\xfe</window>")
+    elif kind == "unwritable file":
+        path = _write_xml(tmp_path / "SlideShow.xml")
+        os.chmod(path, 0o444)
+    elif kind == "unwritable directory":
+        path = _write_xml(tmp_path / "skin" / "SlideShow.xml")
+        os.chmod(str(tmp_path / "skin"), 0o555)
+    else:
+        broken = {
+            "unparseable": "<window><onload>oops",
+            "no window root": "<includes><include/></includes>",
+        }
+        path = _write_xml(tmp_path / "SlideShow.xml", broken[kind])
+    if kind in ("unreadable", "not valid utf-8"):
+        return (
+            path,
+            "SlideShow.xml exists but is not readable: {0}".format(path),
+            "check file permissions for the user running Kodi",
+        )
+    reason, remedy = unwritable if kind.startswith("unwritable") else unparseable
+    return path, reason.format(path), remedy.format(path)
+
+
+@pytest.mark.parametrize("kind", UNMODIFIABLE_KINDS)
+def test_assess_marks_an_unmodifiable_file_and_logs_its_reason_and_remedy(
+    kind: str,
+    tmp_path: pathlib.Path,
+    skin_root: pathlib.Path,
+    restore_permissions: None,
+) -> None:
+    # Break named: assess() growing its own copy of install()'s checks and
+    # disagreeing with it about what a file is (D-017).
+    path, reason, remedy = _unmodifiable_file(kind, tmp_path)
+
+    state = skinconnector.assess(path)
+
+    assert state is skinconnector.SlideshowFileState.NOT_MODIFIABLE
+    assert _errors() == [_failure_line(path, reason, remedy)]
+
+
+@pytest.mark.parametrize(
+    "content",
+    [PLAIN_XML, HOOKED_XML, "<window><onload>oops"],
+    ids=["needs integration", "integrated", "not modifiable"],
+)
+def test_assess_leaves_the_file_and_its_directory_exactly_as_they_were(
+    content: str, tmp_path: pathlib.Path
+) -> None:
+    # Break named: touching the skin -- a backup, the hook, a stray probe
+    # file -- before the user has been asked (spec FR-001).
+    skin = tmp_path / "skin"
+    path = _write_xml(skin / "SlideShow.xml", content)
+
+    skinconnector.assess(path)
+
+    assert _read(path) == content
+    assert os.listdir(str(skin)) == ["SlideShow.xml"]
 
 
 # -- find_slideshow_xml ------------------------------------------------------

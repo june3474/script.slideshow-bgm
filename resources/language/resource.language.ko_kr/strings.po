@@ -88,3 +88,13 @@ msgstr "이 슬라이드쇼에서는 배경 음악을 사용할 수 없습니다
 msgctxt "#32005"
 msgid "The selected smart playlist is not a Music(Songs) playlist.\nContinuing without background music."
 msgstr "선택한 스마트 재생목록이 음악(노래) 재생목록이 아닙니다.\n배경 음악 없이 계속합니다."
+
+# Skin integration consent dialog (specs/002-skin-hook-consent, FR-002).
+# The body sends the user to README.md's "2. Skin integration" for the exact code.
+msgctxt "#32006"
+msgid "Slideshow-BGM needs your permission"
+msgstr "Slideshow-BGM에 사용자의 허가가 필요합니다"
+
+msgctxt "#32007"
+msgid "Slideshow-BGM must add integration code to the current skin's SlideShow.xml so that it can run automatically when a slideshow starts. For details, see \"2. Skin integration\" in README.md.\nIf you choose No, nothing changes and the addon stays inactive. However, you will be asked again at the next start or login. To stop being asked, disable or uninstall the addon."
+msgstr "슬라이드쇼가 실행될 때 Slideshow-BGM이 자동으로 실행되도록, 현재 스킨의 SlideShow.xml에 연동 코드를 추가해야 합니다. 자세한 내용은 README.md의 \"2. Skin integration\"을 참조하세요.\n'아니요'를 선택하면 아무것도 바뀌지 않고 애드온은 비활성 상태로 남습니다.\n다만 다음에 Kodi를 시작하거나 로그인할 때 다시 묻습니다. 더 이상 묻지 않게 하려면 애드온을 비활성화하거나 제거하세요."

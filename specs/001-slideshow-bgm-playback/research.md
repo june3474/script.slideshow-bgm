@@ -520,6 +520,18 @@ uninstalling. Given that, the one-time edit is the smaller imposition.
 `SlideShow.xml` location and structure across skins, and on whether `<onload>` under the
 root `<window>` is honored by all of them.
 
+**Addendum (2026-09-21, specs/002)**: the login-time install no longer runs unasked.
+Before modifying any `SlideShow.xml` the service assesses every file read-only and, if at
+least one needs the hook, asks the user once through a blocking Yes/No dialog — consent to
+modify a third-party file. This reverses, for that one question, the "no blocking dialog
+at profile login" stance FR-015's 2026-09-11 clarification took for install *failures*,
+which stay a non-blocking toast. "No" is a *soft* disable (the addon stays enabled,
+nothing is added to the skin, the question returns next login) because Kodi does not start
+a disabled addon's service at launch. Nothing about the mechanism decided above changes:
+the hook, its guard condition, the service extension point and its exit-immediately shape
+are as decided here. See
+[specs/002 research.md D-015 – D-018](../002-skin-hook-consent/research.md).
+
 ---
 
 ## D-008: Testing without Kodi — hand-written fakes for pytest, Kodistubs for mypy
@@ -733,6 +745,7 @@ caching. That is a functional gap worth its own investigation, not a caching que
 | ~~FR-011 invalid source at settings time~~ | ~~Blocking, must acknowledge~~ | ~~`xbmcgui.Dialog().yesno(...)` to offer re-selection, `xbmcgui.Dialog().ok(...)` for the final "BGM disabled" notice~~ — **withdrawn 2026-09-15, unreachable in Script Mode; see the addendum below** |
 | FR-012 playlist missing at slideshow start | Non-blocking toast | `xbmcgui.Dialog().notification(...)` |
 | FR-015 skin integration failed at profile login | Non-blocking toast, detail in log | `xbmcgui.Dialog().notification(...)` naming the failure generically; `messages.log()` carries the specific reason and remedy |
+| Consent before modifying the skin *(added 2026-09-21, specs/002)* | Blocking Yes/No | `xbmcgui.Dialog().yesno(...)` via `messages.confirm()`; see the 2026-09-21 addendum below |
 | FR-009 all lifecycle logging | Kodi log | `xbmc.log('[slideshow-BGM] ' + msg, level)` |
 
 **Rationale**: matches the 2026-09-09 clarifications exactly, extended 2026-09-11 for
@@ -772,6 +785,15 @@ actually reach is non-blocking. `xbmcgui`'s blocking calls remain modeled in
 the assertions that *no* dialog is raised (`dialog_calls.ok_calls == []`) were kept as
 regression guards. spec.md's FR-011 and Edge Case 1 were amended the same day; see its
 Clarifications entry for 2026-09-15.
+
+**Addendum (2026-09-21, specs/002 — one blocking surface returns)**: the "notify-only"
+collapse above stands for everything except one question. The login-time service — running
+at profile load, unlike a Script Mode addon during its settings screen — asks the user for
+consent before modifying a skin file, through `messages.confirm()` (a blocking `yesno`, no
+autoclose). The table above gains that row. FR-012's and FR-015's failure notifications
+are unchanged and stay non-blocking, and the `yesno_calls == []` regression guard on
+`notify` still holds: `notify` raises no dialog. Rationale and the alternatives rejected:
+[specs/002 research.md D-015](../002-skin-hook-consent/research.md).
 
 ---
 

@@ -60,6 +60,18 @@ One answer from the 2026-09-09 session is **superseded** here.
   `messages.ok`/`messages.yesno` and strings #32002/#32003. FR-011, Edge Case 1,
   research.md D-010 and the module contracts were amended to match.
 
+### Session 2026-09-21
+
+One answer from the 2026-09-11 session is **partially superseded** here.
+
+- Q: (partially supersedes the 2026-09-11 "no blocking dialog at profile login" answer)
+  Should the addon ask before modifying a third-party skin file? → A: Yes, through a
+  blocking Yes/No consent dialog — for that one question only. It is a decision the
+  addon cannot proceed without, unlike an install-failure notice. Reporting of an
+  install *failure* stays the non-blocking notification FR-015 specifies. Specified,
+  planned and tracked in [specs/002-skin-hook-consent](../002-skin-hook-consent/spec.md);
+  FR-015 carries a pointer.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Background Music Plays During a Slideshow (Priority: P1)
@@ -259,6 +271,10 @@ matches the new configuration.
   remedy, and MUST leave Kodi and the slideshow working normally without background
   music. This notification MUST NOT be a blocking dialog: it fires at profile login,
   where nothing else is interrupted, but the user is not necessarily watching.
+  **[AMENDED 2026-09-21]** Before modifying a skin file, system MUST first obtain the
+  user's consent — specified in
+  [specs/002-skin-hook-consent](../002-skin-hook-consent/spec.md). That consent question
+  is the one blocking dialog; the failure notification above stays non-blocking.
 - **FR-016**: System MUST NOT let a fade or the slideshow-end volume restoration undo a
   deliberate volume change the user makes during playback. The volume level every
   fade-in ramps toward, and the level restored when the slideshow ends, MUST reflect
